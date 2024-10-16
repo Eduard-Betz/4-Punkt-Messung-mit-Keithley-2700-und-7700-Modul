@@ -1,13 +1,11 @@
+# Data_to_excel.py
 
-#Data_to_excel.py
-
-from global_vars import TKBoardVariabeln
+from global_vars import TKBoardVariabeln, TK_Fehler  # TK_Fehler importieren
 
 import pandas as pd
 from tkinter import filedialog
 from openpyxl.styles import Font, Alignment, Border, Side
 import openpyxl.utils
-
 
 # Debug-Flag definieren
 debug_Tab4 = False  # Debug-Ausgaben sind standardmäßig deaktiviert
@@ -18,8 +16,6 @@ def debug_print(*args, **kwargs):
         print(*args, **kwargs)
 
 def print_tk_data():
-
-
     # Öffne einen Dialog, um den Speicherort der Excel-Datei zu wählen
     file_path = filedialog.asksaveasfilename(
         defaultextension='.xlsx',
@@ -50,6 +46,10 @@ def print_tk_data():
                 'Probe': '',  # Diese Spalte bleibt leer
             }
 
+            # R²-Werte aus TK_Fehler holen
+            fehler_data = TK_Fehler.get_board_data(board_nr)
+            resistor_fehler = fehler_data.get(resistor_nr, {}) if fehler_data else {}
+
             # Normal Daten
             if 'normal' in values:
                 normal = values['normal']
@@ -60,14 +60,21 @@ def print_tk_data():
                 temp_steigend = tuple(round(t, 2) if isinstance(t, (int, float)) else t for t in temp_steigend)
                 temp_sinkend = tuple(round(t, 2) if isinstance(t, (int, float)) else t for t in temp_sinkend)
 
+                # R²-Werte für normale Daten
+                normal_fehler = resistor_fehler.get('normal', {})
+                r_squared_steigend = normal_fehler.get('r_squared_steigend', '')
+                r_squared_sinkend = normal_fehler.get('r_squared_sinkend', '')
+
                 normal_row = row_common.copy()
                 normal_row.update({
                     'TK Steigende Flanke': normal.get('steigung_steigend', ''),
                     'min temp Steigende Flanke': temp_steigend[0],
                     'max temp Steigende Flanke': temp_steigend[1],
+                    'R² Steigende Flanke': r_squared_steigend,  # R²-Wert hinzufügen
                     'TK sinkende Flanke': normal.get('steigung_sinkend', ''),
                     'min temp sinkende Flanke': temp_sinkend[0],
                     'max temp sinkende Flanke': temp_sinkend[1],
+                    'R² sinkende Flanke': r_squared_sinkend,     # R²-Wert hinzufügen
                 })
                 normal_data_list.append(normal_row)
 
@@ -81,14 +88,21 @@ def print_tk_data():
                 temp_steigend = tuple(round(t, 2) if isinstance(t, (int, float)) else t for t in temp_steigend)
                 temp_sinkend = tuple(round(t, 2) if isinstance(t, (int, float)) else t for t in temp_sinkend)
 
+                # R²-Werte für avg Daten
+                avg_fehler = resistor_fehler.get('avg', {})
+                r_squared_steigend_avg = avg_fehler.get('r_squared_steigend', '')
+                r_squared_sinkend_avg = avg_fehler.get('r_squared_sinkend', '')
+
                 avg_row = row_common.copy()
                 avg_row.update({
                     'TK Steigende Flanke': avg.get('steigung_steigend', ''),
                     'min temp Steigende Flanke': temp_steigend[0],
                     'max temp Steigende Flanke': temp_steigend[1],
+                    'R² Steigende Flanke': r_squared_steigend_avg,  # R²-Wert hinzufügen
                     'TK sinkende Flanke': avg.get('steigung_sinkend', ''),
                     'min temp sinkende Flanke': temp_sinkend[0],
                     'max temp sinkende Flanke': temp_sinkend[1],
+                    'R² sinkende Flanke': r_squared_sinkend_avg,     # R²-Wert hinzufügen
                 })
                 avg_data_list.append(avg_row)
 
@@ -99,8 +113,9 @@ def print_tk_data():
 
     # DataFrames erstellen
     columns = [
-        'Board Nr.', 'Probe', 'TK Steigende Flanke', 'min temp Steigende Flanke', 'max temp Steigende Flanke',
-        'TK sinkende Flanke', 'min temp sinkende Flanke', 'max temp sinkende Flanke'
+        'Board Nr.', 'Probe',
+        'TK Steigende Flanke', 'min temp Steigende Flanke', 'max temp Steigende Flanke', 'R² Steigende Flanke',
+        'TK sinkende Flanke', 'min temp sinkende Flanke', 'max temp sinkende Flanke', 'R² sinkende Flanke'
     ]
     normal_df = pd.DataFrame(normal_data_list, columns=columns)
     avg_df = pd.DataFrame(avg_data_list, columns=columns)
