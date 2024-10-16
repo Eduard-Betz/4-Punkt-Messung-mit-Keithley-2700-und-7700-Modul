@@ -4,7 +4,7 @@ import numpy as np
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 from matplotlib.figure import Figure
 
-from global_vars import TKBoardVariabeln
+from global_vars import TKBoardVariabeln, TK_Fehler
 
 from Tab3.PlotsControls import get_dynamic_colormap
 
@@ -129,15 +129,9 @@ def plot_resistance_vs_temperature_generic(plot_frame, steigung_auswahl, sinkend
 
 def fit_and_store_line_data_generic(plot_frame, steigung_auswahl, sinkend_auswahl, use_avg_temperatures=False):
     """
-    Generische Funktion zum Berechnen der linearen Regression und Speichern der Ergebnisse.
+    Generische Funktion zum Berechnen der linearen Regression und Speichern der Ergebnisse,
+    einschließlich der Berechnung des R²-Wertes.
     """
-    def fit_line(temperatures, resistances):
-        if len(temperatures) < 2 or len(resistances) < 2:
-            return None, (None, None)
-        m, b = np.polyfit(temperatures, resistances, 1)
-        temp_bereich = (round(min(temperatures), 2), round(max(temperatures), 2))
-        return round(m, 5), temp_bereich
-
     fig = Figure(figsize=(8.5, 4), dpi=100)
     ax = fig.add_subplot(111)
 
@@ -163,8 +157,6 @@ def fit_and_store_line_data_generic(plot_frame, steigung_auswahl, sinkend_auswah
         avg_temperatures_steigend = [round(temp, 2) for temp in avg_temperatures_steigend if temp is not None]
         avg_temperatures_sinkend = [round(temp, 2) for temp in avg_temperatures_sinkend if temp is not None]
 
-    # Entferne den Aufruf von TKBoardVariabeln.clear() hier
-    # TKBoardVariabeln.clear()  # Dies wird jetzt in den spezifischen Funktionen gehandhabt
 
     board_results = []
 
@@ -205,9 +197,23 @@ def fit_and_store_line_data_generic(plot_frame, steigung_auswahl, sinkend_auswah
         temperatures_steigend = [round(temp, 2) for temp in temperatures_steigend]
         temperatures_sinkend = [round(temp, 2) for temp in temperatures_sinkend]
 
-        # Berechnung der Steigungen und Temperaturbereiche
-        steigung_steigend, temp_bereich_steigend = fit_line(temperatures_steigend, resistances_steigend)
-        steigung_sinkend, temp_bereich_sinkend = fit_line(temperatures_sinkend, resistances_sinkend)
+        # Berechnung der Steigungen, Temperaturbereiche und R²-Werte
+        def perform_linear_regression(temps, resists):
+            if len(temps) < 2 or len(resists) < 2:
+                return None, (None, None), None
+            m, b = np.polyfit(temps, resists, 1)
+            temp_bereich = (round(min(temps), 2), round(max(temps), 2))
+            # Berechnung von R²
+            y_pred = m * np.array(temps) + b
+            ss_res = np.sum((np.array(resists) - y_pred) ** 2)
+            ss_tot = np.sum((np.array(resists) - np.mean(resists)) ** 2)
+            r_squared = 1 - (ss_res / ss_tot) if ss_tot != 0 else None
+            return round(m, 5), temp_bereich, round(r_squared, 5) if r_squared is not None else None
+
+        # Steigende Flanke
+        steigung_steigend, temp_bereich_steigend, r_squared_steigend = perform_linear_regression(temperatures_steigend, resistances_steigend)
+        # Sinkende Flanke
+        steigung_sinkend, temp_bereich_sinkend, r_squared_sinkend = perform_linear_regression(temperatures_sinkend, resistances_sinkend)
 
         # Kombinierte Temperaturen für Temp. min und Temp. max (für die GUI)
         all_temperatures = temperatures_steigend + temperatures_sinkend
@@ -217,22 +223,35 @@ def fit_and_store_line_data_generic(plot_frame, steigung_auswahl, sinkend_auswah
         else:
             temp_min = temp_max = "N/A"
 
-        # Speichern der Werte in TKBoardVariabeln
+        # Speichern der Werte in TKBoardVariabeln und TK_Fehler
         if not use_avg_temperatures:
-            # Hier nicht mehr clear aufrufen, sondern die Daten hinzufügen
             TKBoardVariabeln.update_board(
                 board_nr_str,
                 resistor_nr,
                 steigung_steigend, temp_bereich_steigend,
                 steigung_sinkend, temp_bereich_sinkend,
-                temp_min, temp_max
+                temp_min, temp_max,
+                r_squared_steigend, r_squared_sinkend
+            )
+            TK_Fehler.update_board(
+                board_nr_str,
+                resistor_nr,
+                r_squared_steigend,
+                r_squared_sinkend
             )
         else:
             TKBoardVariabeln.update_board_avg(
                 board_nr_str,
                 resistor_nr,
                 steigung_steigend, temp_bereich_steigend,
-                steigung_sinkend, temp_bereich_sinkend
+                steigung_sinkend, temp_bereich_sinkend,
+                r_squared_steigend, r_squared_sinkend
+            )
+            TK_Fehler.update_board_avg(
+                board_nr_str,
+                resistor_nr,
+                r_squared_steigend,
+                r_squared_sinkend
             )
 
         # Ergebnisse sammeln für die Ausgabe
@@ -240,8 +259,10 @@ def fit_and_store_line_data_generic(plot_frame, steigung_auswahl, sinkend_auswah
             'board_nr': int(board_nr_str),
             'steigung_steigend': steigung_steigend,
             'temp_bereich_steigend': temp_bereich_steigend,
+            'r_squared_steigend': r_squared_steigend,
             'steigung_sinkend': steigung_sinkend,
-            'temp_bereich_sinkend': temp_bereich_sinkend
+            'temp_bereich_sinkend': temp_bereich_sinkend,
+            'r_squared_sinkend': r_squared_sinkend
         })
 
         # Funktion zum Plotten der gefitteten Linie
@@ -256,11 +277,17 @@ def fit_and_store_line_data_generic(plot_frame, steigung_auswahl, sinkend_auswah
         plot_fitted_line(temperatures_steigend, resistances_steigend, board_color_map[board_nr])
         plot_fitted_line(temperatures_sinkend, resistances_sinkend, board_color_map[board_nr])
 
-    # Ergebnisse sortieren und ausgeben
+    # Ergebnisse ausgeben (optional)
     for result in board_results:
         debug_print(f"Board {result['board_nr']}:")
-        debug_print(f"  Steigende Flanke{' (durchschn. Temp.)' if use_avg_temperatures else ''}: Steigung = {result['steigung_steigend']}, Temperaturbereich = {result['temp_bereich_steigend']}")
-        debug_print(f"  Sinkende Flanke{' (durchschn. Temp.)' if use_avg_temperatures else ''}: Steigung = {result['steigung_sinkend']}, Temperaturbereich = {result['temp_bereich_sinkend']}")
+        debug_print(f"  Steigende Flanke{' (durchschn. Temp.)' if use_avg_temperatures else ''}:")
+        debug_print(f"    Steigung = {result['steigung_steigend']}")
+        debug_print(f"    Temperaturbereich = {result['temp_bereich_steigend']}")
+        debug_print(f"    R^2 = {result['r_squared_steigend']}")
+        debug_print(f"  Sinkende Flanke{' (durchschn. Temp.)' if use_avg_temperatures else ''}:")
+        debug_print(f"    Steigung = {result['steigung_sinkend']}")
+        debug_print(f"    Temperaturbereich = {result['temp_bereich_sinkend']}")
+        debug_print(f"    R^2 = {result['r_squared_sinkend']}")
 
     # Funktion zum Plotten der Flankenpunkte
     def plot_flanke(flanken_auswahl, avg_temperatures=None):
@@ -315,12 +342,14 @@ def fit_and_store_line_data_generic(plot_frame, steigung_auswahl, sinkend_auswah
 
     fig.tight_layout(rect=[0.01, 0, 0.95, 1])
 
+    # Alte Widgets entfernen und Canvas hinzufügen
     for widget in plot_frame.winfo_children():
         widget.destroy()
 
     canvas = FigureCanvasTkAgg(fig, master=plot_frame)
     canvas.draw()
     canvas.get_tk_widget().pack(side="top", fill="both", expand=True)
+
 
 # Funktionen zum Aufrufen der generischen Funktionen mit spezifischen Parametern
 def plot_resistance_vs_temperature(plot_frame, steigung_auswahl, sinkend_auswahl):

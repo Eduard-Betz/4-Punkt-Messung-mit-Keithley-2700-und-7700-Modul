@@ -4,7 +4,7 @@ import tkinter as tk
 from tkinter import ttk
 from time import sleep
 
-from global_vars import PlotAuswahl
+from global_vars import PlotAuswahl, TK_Fehler
 from Tab4.Data_to_excel import print_tk_data
 from Tab4.TKPlot import (
     plot_resistance_vs_temperature,
@@ -87,7 +87,7 @@ def create_tab4(notebook):
         ("Plot erstellen", 0, open_and_plot),
         ("TK Berechnen", 0.1, TKBerechnen),
         ("TK zu Exel Tabelle", 0.8, print_tk_data),
-        ("Knopf 4", 0.9, None)
+        ("R^2 Ausgeben", 0.9, print_r_squared_values)
     ]
 
     buttons = create_buttons(tab4, button_positions)
@@ -104,3 +104,27 @@ def create_buttons(tab, button_positions):
     return buttons
 
 
+    
+# Funktion zum Ausgeben der R²-Werte im Terminal
+def print_r_squared_values():
+    fehler_variablen = TK_Fehler.fehler_variablen
+    if not fehler_variablen:
+        print("Keine R²-Werte verfügbar. Bitte führen Sie zuerst die TK-Berechnung durch.")
+        return
+    for board_nr, resistors in fehler_variablen.items():
+        for resistor_nr, data in resistors.items():
+            print(f"\nBoard {board_nr}, Widerstand {resistor_nr}:")
+            # Normaldaten
+            normal_data = data.get('normal', {})
+            r_squared_steigend = normal_data.get('r_squared_steigend', 'N/A')
+            r_squared_sinkend = normal_data.get('r_squared_sinkend', 'N/A')
+            print("  Normale Temperaturen:")
+            print(f"    R² Steigend: {r_squared_steigend}")
+            print(f"    R² Sinkend: {r_squared_sinkend}")
+            # Gemittelte Daten
+            avg_data = data.get('avg', {})
+            r_squared_steigend_avg = avg_data.get('r_squared_steigend', 'N/A')
+            r_squared_sinkend_avg = avg_data.get('r_squared_sinkend', 'N/A')
+            print("  Durchschnittliche Temperaturen:")
+            print(f"    R² Steigend: {r_squared_steigend_avg}")
+            print(f"    R² Sinkend: {r_squared_sinkend_avg}")
