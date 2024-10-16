@@ -230,7 +230,5 @@ class TKBoardVariabelnManager:
         self.board_variablen.clear()
 
 
-
-
 # Initialisiere TKBoardVariabeln
 TKBoardVariabeln = TKBoardVariabelnManager()
