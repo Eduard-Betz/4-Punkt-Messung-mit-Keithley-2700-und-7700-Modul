@@ -182,13 +182,14 @@ class PlotwerteManager:
 Plotwerte = PlotwerteManager()
 
 
-
 class TKBoardVariabelnManager:
     def __init__(self):
         self.board_variablen = {}
 
     # Normale Temperaturen speichern
-    def update_board(self, board_nr, resistor_nr, steigung_steigend, temp_bereich_steigend, steigung_sinkend, temp_bereich_sinkend, temp_min, temp_max):
+    def update_board(self, board_nr, resistor_nr, steigung_steigend, temp_bereich_steigend, 
+                    steigung_sinkend, temp_bereich_sinkend, temp_min, temp_max, 
+                    r_squared_steigend=None, r_squared_sinkend=None):
         board_nr = str(board_nr).replace('Board ', '')
         if board_nr not in self.board_variablen:
             self.board_variablen[board_nr] = {}
@@ -200,20 +201,26 @@ class TKBoardVariabelnManager:
             'steigung_sinkend': steigung_sinkend,
             'temp_bereich_sinkend': temp_bereich_sinkend,
             'temp_min': temp_min,
-            'temp_max': temp_max
+            'temp_max': temp_max,
+            'r_squared_steigend': r_squared_steigend,
+            'r_squared_sinkend': r_squared_sinkend
         }
 
     # Gemittelte Temperaturen speichern
-    def update_board_avg(cls, board_nr, resistor_nr, steigung_steigend, temp_bereich_steigend, steigung_sinkend, temp_bereich_sinkend):
-        if board_nr not in cls.board_variablen:
-            cls.board_variablen[board_nr] = {}
-        if resistor_nr not in cls.board_variablen[board_nr]:
-            cls.board_variablen[board_nr][resistor_nr] = {}
-        cls.board_variablen[board_nr][resistor_nr]['avg'] = {
+    def update_board_avg(self, board_nr, resistor_nr, steigung_steigend, temp_bereich_steigend, 
+                        steigung_sinkend, temp_bereich_sinkend, 
+                        r_squared_steigend=None, r_squared_sinkend=None):
+        if board_nr not in self.board_variablen:
+            self.board_variablen[board_nr] = {}
+        if resistor_nr not in self.board_variablen[board_nr]:
+            self.board_variablen[board_nr][resistor_nr] = {}
+        self.board_variablen[board_nr][resistor_nr]['avg'] = {
             'steigung_steigend': steigung_steigend,
             'temp_bereich_steigend': temp_bereich_steigend,
             'steigung_sinkend': steigung_sinkend,
-            'temp_bereich_sinkend': temp_bereich_sinkend
+            'temp_bereich_sinkend': temp_bereich_sinkend,
+            'r_squared_steigend': r_squared_steigend,
+            'r_squared_sinkend': r_squared_sinkend
         }
 
     def get_board_data(self, board_nr):
@@ -223,6 +230,7 @@ class TKBoardVariabelnManager:
         self.board_variablen.clear()
 
 
+
+
 # Initialisiere TKBoardVariabeln
 TKBoardVariabeln = TKBoardVariabelnManager()
-
