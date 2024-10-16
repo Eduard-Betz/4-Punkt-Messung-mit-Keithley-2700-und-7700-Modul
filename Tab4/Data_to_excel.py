@@ -7,7 +7,7 @@ import pandas as pd
 from tkinter import filedialog
 from openpyxl.styles import Font, Alignment, Border, Side
 import openpyxl.utils
-from pprint import pprint  # Import für Debugging
+
 
 # Debug-Flag definieren
 debug_Tab4 = False  # Debug-Ausgaben sind standardmäßig deaktiviert
