@@ -6,7 +6,7 @@ from time import sleep
 
 from global_vars import PlotAuswahl, TK_Fehler, TKBoardVariabeln
 
-from Tab4.Data_to_excel import print_tk_data
+from Tab4.Data_to_excel import print_tk_data, TK_auswahl_zu_excel
 from Tab4.TKPlot import (
     plot_resistance_vs_temperature,
     plot_resistance_vs_avg_temperature,
@@ -91,7 +91,7 @@ def create_tab4(notebook):
         ("Plot erstellen", 0, open_and_plot),
         ("TK Berechnen", 0.1, TKBerechnen),
         ("TK zu Exel Tabelle", 0.8, print_tk_data),
-        ("Knopf 4", 0.9, print_errors)
+        ("Knopf 4", 0.9, TK_auswahl_zu_excel)
     ]
 
     buttons = create_buttons(tab4, button_positions)
@@ -106,47 +106,3 @@ def create_buttons(tab, button_positions):
         button.place(relx=1, rely=rel_y, anchor='ne', relwidth=0.2, relheight=0.1)
         buttons.append(button)
     return buttons
-
-def print_errors():
-    # Überprüfen, ob es Fehlerdaten gibt
-    if not TK_Fehler.fehler_variablen:
-        print("Keine Fehlerdaten vorhanden. Bitte führen Sie zuerst die TK-Berechnung durch.")
-        return
-
-    # Iterieren über alle Boards
-    for board_nr, resistors in TK_Fehler.fehler_variablen.items():
-        print(f"\nBoard {board_nr}:")
-        for resistor_nr, data in resistors.items():
-            print(f"  Widerstand {resistor_nr}:")
-            # Daten für 'normal' (ohne durchschnittliche Temperatur)
-            if 'normal' in data:
-                normal_data = data['normal']
-                print("    Ohne durchschnittliche Temperatur:")
-                print(f"      R² steigend: {normal_data.get('r_squared_steigend')}")
-                print(f"      R² sinkend: {normal_data.get('r_squared_sinkend')}")
-                print(f"      ∆αGesamt steigend: {normal_data.get('delta_alpha_total_steigend')}")
-                print(f"      ∆αGesamt sinkend: {normal_data.get('delta_alpha_total_sinkend')}")
-                print(f"      n steigend: {normal_data.get('n_steigend')}")
-                print(f"      n sinkend: {normal_data.get('n_sinkend')}")
-                print(f"      Sxx steigend: {normal_data.get('Sxx_steigend')}")
-                print(f"      Sxx sinkend: {normal_data.get('Sxx_sinkend')}")
-                print(f"      delta_T steigend: {normal_data.get('delta_T_steigend')}")
-                print(f"      delta_T sinkend: {normal_data.get('delta_T_sinkend')}")
-                print(f"      delta_alpha steigend: {normal_data.get('delta_alpha_steigend')}")
-                print(f"      delta_alpha sinkend: {normal_data.get('delta_alpha_sinkend')}")
-            # Daten für 'avg' (mit durchschnittlicher Temperatur)
-            if 'avg' in data:
-                avg_data = data['avg']
-                print("    Mit durchschnittlicher Temperatur:")
-                print(f"      R² steigend: {avg_data.get('r_squared_steigend')}")
-                print(f"      R² sinkend: {avg_data.get('r_squared_sinkend')}")
-                print(f"      ∆αGesamt steigend: {avg_data.get('delta_alpha_total_steigend')}")
-                print(f"      ∆αGesamt sinkend: {avg_data.get('delta_alpha_total_sinkend')}")
-                print(f"      n steigend: {avg_data.get('n_steigend')}")
-                print(f"      n sinkend: {avg_data.get('n_sinkend')}")
-                print(f"      Sxx steigend: {avg_data.get('Sxx_steigend')}")
-                print(f"      Sxx sinkend: {avg_data.get('Sxx_sinkend')}")
-                print(f"      delta_T steigend: {avg_data.get('delta_T_steigend')}")
-                print(f"      delta_T sinkend: {avg_data.get('delta_T_sinkend')}")
-                print(f"      delta_alpha steigend: {avg_data.get('delta_alpha_steigend')}")
-                print(f"      delta_alpha sinkend: {avg_data.get('delta_alpha_sinkend')}")

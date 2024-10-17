@@ -1,11 +1,12 @@
 # Datei: Data_to_excel.py
 
-from global_vars import TKBoardVariabeln, TK_Fehler  # TK_Fehler importieren
+from global_vars import TKBoardVariabeln, TK_Fehler, PlotAuswahl  # TK_Fehler importieren
 
 import pandas as pd
-from tkinter import filedialog
-from openpyxl.styles import Font, Alignment, Border, Side
+from openpyxl.styles import Font, Alignment, PatternFill, Border, Side
 import openpyxl.utils
+import tkinter as tk
+from tkinter import filedialog
 
 # Debug-Flag definieren
 debug_Tab4 = False  # Debug-Ausgaben sind standardmäßig deaktiviert
@@ -320,3 +321,207 @@ def print_tk_data():
 
     # Erfolgsmeldung
     print(f"Excel-Datei wurde gespeichert unter: {file_path}")
+
+
+def TK_auswahl_zu_excel():
+
+    if PlotAuswahl is None:
+        print("Die Variable PlotAuswahl ist nicht definiert.")
+        return
+
+    # Öffne ein Speichern-unter-Dialog, um den Dateinamen und Speicherort auszuwählen
+    root = tk.Tk()
+    root.withdraw()  # Versteckt das Hauptfenster
+    root.call('wm', 'attributes', '.', '-topmost', True)  # Bringt das Fenster in den Vordergrund
+
+    dateiname = filedialog.asksaveasfilename(
+        defaultextension='.xlsx',
+        filetypes=[('Excel Dateien', '*.xlsx'), ('Alle Dateien', '*.*')],
+        title="Speichern unter"
+    )
+
+    if not dateiname:
+        print("Speichern abgebrochen.")
+        return
+
+    # Erstelle den ExcelWriter mit 'openpyxl' Engine
+    with pd.ExcelWriter(dateiname, engine='openpyxl') as writer:
+
+        # Liste der Datensätze und zugehörigen Sheetnamen
+        datasets = []
+        if hasattr(PlotAuswahl, 'steigung') and PlotAuswahl.steigung is not None:
+            datasets.append(('steigende Flanke', PlotAuswahl.steigung))
+        if hasattr(PlotAuswahl, 'sinkend') and PlotAuswahl.sinkend is not None:
+            datasets.append(('fallende Flanke', PlotAuswahl.sinkend))
+
+        if not datasets:
+            print("Keine gültigen Daten in PlotAuswahl gefunden.")
+            return
+
+        for sheet_name, plot_data in datasets:
+            status, boards_data = plot_data
+
+            # Ermitteln der maximalen Anzahl von Messpunkten
+            max_messpunkte = max(len(data[1]) for data in boards_data.values())
+
+            # Initialisiere die Spalten
+            spalten = ['Messpunkt']
+
+            # Erstelle ein Dictionary, das die Anzahl der Widerstände pro Board speichert
+            widerstand_counts = {}
+
+            # Boards sortieren für konsistente Spaltenreihenfolge
+            sorted_boards = sorted(boards_data.keys())
+
+            for board_name in sorted_boards:
+                board_status, datenpunkte = boards_data[board_name]
+                # Anzahl der Widerstände ermitteln (Annahme: Temperatur ist der letzte Wert, Zeitpunkt ist der erste)
+                beispiel_datenpunkt = datenpunkte[0]
+                anzahl_widerstaende = len(beispiel_datenpunkt) - 2  # - Zeitpunkt, - Temperatur
+                widerstand_counts[board_name] = anzahl_widerstaende
+
+            # Erstelle eine Liste von Dictionaries für jeden Messpunkt
+            daten = []
+            for messpunkt_index in range(max_messpunkte):
+                messpunkt_daten = {'Messpunkt': messpunkt_index + 1}
+                for board_name in sorted_boards:
+                    board_status, datenpunkte = boards_data[board_name]
+                    anzahl_widerstaende = widerstand_counts[board_name]
+                    if messpunkt_index < len(datenpunkte):
+                        datenpunkt = datenpunkte[messpunkt_index]
+                        # Zeitpunkt ignorieren
+                        widerstandswerte = datenpunkt[1:-1]
+                        temperatur = datenpunkt[-1]
+                        # Annahme: Nur ein Widerstand pro Board
+                        messpunkt_daten[f'{board_name} Widerstand 1'] = widerstandswerte[0] if widerstandswerte else None
+                        messpunkt_daten[f'{board_name} Temperatur'] = temperatur
+                    else:
+                        # Fehlende Daten mit None auffüllen
+                        messpunkt_daten[f'{board_name} Widerstand 1'] = None
+                        messpunkt_daten[f'{board_name} Temperatur'] = None
+                daten.append(messpunkt_daten)
+
+            # Erstelle den DataFrame
+            df = pd.DataFrame(daten)
+
+            # Schreibe den DataFrame in eine Excel-Datei mit Formatierungen
+            df.to_excel(writer, sheet_name=sheet_name, index=False, header=False, startrow=3)
+            workbook = writer.book
+            worksheet = writer.sheets[sheet_name]
+
+            # Erste Zeile: Titel
+            header_title = f"Messwerte mit Boardtemperatur {sheet_name}"
+            total_columns = df.shape[1] + 1  # +1 für die zusätzliche Spalte
+            worksheet.merge_cells(start_row=1, start_column=1, end_row=1, end_column=total_columns)
+            cell = worksheet.cell(row=1, column=1)
+            cell.value = header_title
+            cell.font = Font(bold=True)
+            cell.alignment = Alignment(horizontal='center')
+            cell.fill = PatternFill(start_color='C6EFCE', end_color='C6EFCE', fill_type='solid')
+
+            # Zweite Zeile: 'Messpunkt', 'Board 1', 'Board 2', ..., 'Gemittelte Temperatur'
+            worksheet.cell(row=2, column=1).value = 'Messpunkt'
+            worksheet.cell(row=2, column=1).font = Font(bold=True)
+            worksheet.cell(row=2, column=1).alignment = Alignment(horizontal='center')
+            worksheet.cell(row=2, column=1).fill = PatternFill(start_color='C6EFCE', end_color='C6EFCE', fill_type='solid')
+
+            col = 2
+            for board_name in sorted_boards:
+                worksheet.merge_cells(start_row=2, start_column=col, end_row=2, end_column=col + 1)
+                cell = worksheet.cell(row=2, column=col)
+                cell.value = board_name
+                cell.font = Font(bold=True)
+                cell.alignment = Alignment(horizontal='center')
+                cell.fill = PatternFill(start_color='C6EFCE', end_color='C6EFCE', fill_type='solid')
+                col += 2
+
+            # Zusätzliche Spalte für 'Gemittelte Temperatur'
+            cell = worksheet.cell(row=2, column=col)
+            cell.value = 'Gemittelte Temperatur'
+            cell.font = Font(bold=True)
+            cell.alignment = Alignment(horizontal='center')
+            cell.fill = PatternFill(start_color='C6EFCE', end_color='C6EFCE', fill_type='solid')
+
+            # Dritte Zeile: 'Widerstand 1', 'Temperatur', ..., ''
+            worksheet.cell(row=3, column=1).value = ''
+            worksheet.cell(row=3, column=1).fill = PatternFill(start_color='C6EFCE', end_color='C6EFCE', fill_type='solid')
+            col = 2
+            for board_name in sorted_boards:
+                cell_widerstand = worksheet.cell(row=3, column=col)
+                cell_widerstand.value = 'Widerstand 1'
+                cell_widerstand.font = Font(bold=True)
+                cell_widerstand.alignment = Alignment(horizontal='center')
+                cell_widerstand.fill = PatternFill(start_color='C6EFCE', end_color='C6EFCE', fill_type='solid')
+
+                cell_temperatur = worksheet.cell(row=3, column=col + 1)
+                cell_temperatur.value = 'Temperatur'
+                cell_temperatur.font = Font(bold=True)
+                cell_temperatur.alignment = Alignment(horizontal='center')
+                cell_temperatur.fill = PatternFill(start_color='C6EFCE', end_color='C6EFCE', fill_type='solid')
+
+                col += 2
+
+            # Leere Zelle unter 'Gemittelte Temperatur'
+            cell = worksheet.cell(row=3, column=col)
+            cell.value = ''
+            cell.fill = PatternFill(start_color='C6EFCE', end_color='C6EFCE', fill_type='solid')
+
+            # Schreibe die Daten und füge die Formel für die gemittelte Temperatur hinzu
+            for row_idx, row in enumerate(df.itertuples(index=False), start=4):
+                # Messpunkt
+                worksheet.cell(row=row_idx, column=1).value = row[0]
+                worksheet.cell(row=row_idx, column=1).alignment = Alignment(horizontal='center')
+
+                col = 2
+                temperatur_cells = []
+                for board_name in sorted_boards:
+                    # Widerstand
+                    value_widerstand = row[df.columns.get_loc(f'{board_name} Widerstand 1')]
+                    worksheet.cell(row=row_idx, column=col).value = value_widerstand
+                    worksheet.cell(row=row_idx, column=col).alignment = Alignment(horizontal='center')
+                    # Temperatur
+                    value_temperatur = row[df.columns.get_loc(f'{board_name} Temperatur')]
+                    worksheet.cell(row=row_idx, column=col + 1).value = value_temperatur
+                    worksheet.cell(row=row_idx, column=col + 1).alignment = Alignment(horizontal='center')
+
+                    # Speichere die Zelladresse der Temperatur
+                    temperatur_cell = worksheet.cell(row=row_idx, column=col + 1)
+                    temperatur_cells.append(temperatur_cell.coordinate)
+
+                    col += 2
+
+                # Formel für gemittelte Temperatur
+                if temperatur_cells:
+                    formel = f"=ROUND(AVERAGE({','.join(temperatur_cells)}),2)"
+                    cell = worksheet.cell(row=row_idx, column=col)
+                    cell.value = formel
+                    cell.alignment = Alignment(horizontal='center')
+                else:
+                    # Falls keine Temperaturwerte vorhanden sind
+                    worksheet.cell(row=row_idx, column=col).value = None
+
+            # Spaltenbreiten anpassen
+            for col_idx in range(1, worksheet.max_column + 1):
+                worksheet.column_dimensions[openpyxl.utils.get_column_letter(col_idx)].width = 15
+
+            # Rahmen hinzufügen
+            thin_border = Border(
+                left=Side(style='thin'),
+                right=Side(style='thin'),
+                top=Side(style='thin'),
+                bottom=Side(style='thin')
+            )
+
+            for row in worksheet.iter_rows(min_row=1, max_row=worksheet.max_row, min_col=1, max_col=worksheet.max_column):
+                for cell in row:
+                    cell.border = thin_border
+
+            # Erste drei Zeilen grün einfärben
+            green_fill = PatternFill(start_color='C6EFCE', end_color='C6EFCE', fill_type='solid')
+            for row in range(1, 4):
+                for col in range(1, worksheet.max_column + 1):
+                    cell = worksheet.cell(row=row, column=col)
+                    cell.fill = green_fill
+
+        print(f'Daten erfolgreich in {dateiname} gespeichert.')
+
