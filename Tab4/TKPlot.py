@@ -200,20 +200,64 @@ def fit_and_store_line_data_generic(plot_frame, steigung_auswahl, sinkend_auswah
         # Berechnung der Steigungen, Temperaturbereiche und R²-Werte
         def perform_linear_regression(temps, resists):
             if len(temps) < 2 or len(resists) < 2:
-                return None, (None, None), None
-            m, b = np.polyfit(temps, resists, 1)
+                return None, (None, None), None, None  # Fügen Sie None für ∆αGesamt hinzu
+
+            n = len(temps)
+            m, b = np.polyfit(temps, resists, 1)  # m ist die Steigung α
             temp_bereich = (round(min(temps), 2), round(max(temps), 2))
+
             # Berechnung von R²
             y_pred = m * np.array(temps) + b
             ss_res = np.sum((np.array(resists) - y_pred) ** 2)
             ss_tot = np.sum((np.array(resists) - np.mean(resists)) ** 2)
             r_squared = 1 - (ss_res / ss_tot) if ss_tot != 0 else None
-            return round(m, 5), temp_bereich, round(r_squared, 5) if r_squared is not None else None
+
+            # Berechnung von Sxx
+            Sxx = np.sum((np.array(temps) - np.mean(temps)) ** 2)
+
+            # Berechnung von SQTotal und SQRes
+            SQTotal = ss_tot
+            SQRes = (1 - r_squared) * SQTotal if r_squared is not None else None
+
+            # Berechnung von ∆α
+            if SQRes is not None and n > 2 and Sxx != 0:
+                delta_alpha = np.sqrt(SQRes / (n - 2)) / np.sqrt(Sxx)
+            else:
+                delta_alpha = None
+
+            # Mittelwert der Temperatur für ∆T
+            mean_T = np.mean(temps)
+            delta_T = 0.3 + 0.005 * abs(mean_T)  # Gemäß Genauigkeit Klasse B
+            delta_R = 0.01  # Gegebener Fehler für Widerstand
+
+            # Berechnung von ∆αGesamt
+            if Sxx != 0 and delta_T != 0:
+                term1 = (delta_R / (delta_T * Sxx)) ** 2
+                term2 = (m * delta_T / Sxx) ** 2
+                term3 = delta_alpha ** 2 if delta_alpha is not None else 0
+                delta_alpha_total = np.sqrt(term1 + term2 + term3)
+            else:
+                delta_alpha_total = None
+
+            # Debugging-Ausgaben
+            print(f"\nDebugging-Informationen für Linearregression:")
+            print(f"  Anzahl der Datenpunkte (n): {n}")
+            print(f"  Sxx: {Sxx}")
+            print(f"  delta_T: {delta_T}")
+            print(f"  delta_alpha: {delta_alpha}")
+            print(f"  delta_alpha_total: {delta_alpha_total}")
+
+            # Rückgabe der berechneten Werte
+            return round(m, 5), temp_bereich, round(r_squared, 5) if r_squared is not None else None, delta_alpha_total
+
 
         # Steigende Flanke
-        steigung_steigend, temp_bereich_steigend, r_squared_steigend = perform_linear_regression(temperatures_steigend, resistances_steigend)
+        steigung_steigend, temp_bereich_steigend, r_squared_steigend, delta_alpha_total_steigend = perform_linear_regression(temperatures_steigend, resistances_steigend)
+
         # Sinkende Flanke
-        steigung_sinkend, temp_bereich_sinkend, r_squared_sinkend = perform_linear_regression(temperatures_sinkend, resistances_sinkend)
+        steigung_sinkend, temp_bereich_sinkend, r_squared_sinkend, delta_alpha_total_sinkend = perform_linear_regression(temperatures_sinkend, resistances_sinkend)
+
+
 
         # Kombinierte Temperaturen für Temp. min und Temp. max (für die GUI)
         all_temperatures = temperatures_steigend + temperatures_sinkend

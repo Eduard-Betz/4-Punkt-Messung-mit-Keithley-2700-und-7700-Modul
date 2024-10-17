@@ -91,7 +91,7 @@ def create_tab4(notebook):
         ("Plot erstellen", 0, open_and_plot),
         ("TK Berechnen", 0.1, TKBerechnen),
         ("TK zu Exel Tabelle", 0.8, print_tk_data),
-        ("Knopf 4", 0.9, None)
+        ("Knopf 4", 0.9, print_errors)
     ]
 
     buttons = create_buttons(tab4, button_positions)
@@ -106,3 +106,32 @@ def create_buttons(tab, button_positions):
         button.place(relx=1, rely=rel_y, anchor='ne', relwidth=0.2, relheight=0.1)
         buttons.append(button)
     return buttons
+
+
+def print_errors():
+    # Überprüfen, ob es Fehlerdaten gibt
+    if not TK_Fehler.fehler_variablen:
+        print("Keine Fehlerdaten vorhanden. Bitte führen Sie zuerst die TK-Berechnung durch.")
+        return
+
+    # Iterieren über alle Boards
+    for board_nr, resistors in TK_Fehler.fehler_variablen.items():
+        print(f"\nBoard {board_nr}:")
+        for resistor_nr, data in resistors.items():
+            print(f"  Widerstand {resistor_nr}:")
+            # Daten für 'normal' (ohne durchschnittliche Temperatur)
+            if 'normal' in data:
+                normal_data = data['normal']
+                print("    Ohne durchschnittliche Temperatur:")
+                print(f"      R² steigend: {normal_data.get('r_squared_steigend')}")
+                print(f"      R² sinkend: {normal_data.get('r_squared_sinkend')}")
+                print(f"      ∆αGesamt steigend: {normal_data.get('delta_alpha_total_steigend')}")
+                print(f"      ∆αGesamt sinkend: {normal_data.get('delta_alpha_total_sinkend')}")
+            # Daten für 'avg' (mit durchschnittlicher Temperatur)
+            if 'avg' in data:
+                avg_data = data['avg']
+                print("    Mit durchschnittlicher Temperatur:")
+                print(f"      R² steigend: {avg_data.get('r_squared_steigend')}")
+                print(f"      R² sinkend: {avg_data.get('r_squared_sinkend')}")
+                print(f"      ∆αGesamt steigend: {avg_data.get('delta_alpha_total_steigend')}")
+                print(f"      ∆αGesamt sinkend: {avg_data.get('delta_alpha_total_sinkend')}")

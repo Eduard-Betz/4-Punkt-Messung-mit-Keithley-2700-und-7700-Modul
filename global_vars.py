@@ -239,24 +239,28 @@ class TKFehlerManager:
     def __init__(self):
         self.fehler_variablen = {}
     
-    def update_board(self, board_nr, resistor_nr, r_squared_steigend, r_squared_sinkend):
+    def update_board(self, board_nr, resistor_nr, r_squared_steigend, r_squared_sinkend, delta_alpha_total_steigend=None, delta_alpha_total_sinkend=None):
         if board_nr not in self.fehler_variablen:
             self.fehler_variablen[board_nr] = {}
         if resistor_nr not in self.fehler_variablen[board_nr]:
             self.fehler_variablen[board_nr][resistor_nr] = {}
         self.fehler_variablen[board_nr][resistor_nr]['normal'] = {
             'r_squared_steigend': r_squared_steigend,
-            'r_squared_sinkend': r_squared_sinkend
+            'r_squared_sinkend': r_squared_sinkend,
+            'delta_alpha_total_steigend': delta_alpha_total_steigend,
+            'delta_alpha_total_sinkend': delta_alpha_total_sinkend
         }
-
-    def update_board_avg(self, board_nr, resistor_nr, r_squared_steigend, r_squared_sinkend):
+    
+    def update_board_avg(self, board_nr, resistor_nr, r_squared_steigend, r_squared_sinkend, delta_alpha_total_steigend=None, delta_alpha_total_sinkend=None):
         if board_nr not in self.fehler_variablen:
             self.fehler_variablen[board_nr] = {}
         if resistor_nr not in self.fehler_variablen[board_nr]:
             self.fehler_variablen[board_nr][resistor_nr] = {}
         self.fehler_variablen[board_nr][resistor_nr]['avg'] = {
             'r_squared_steigend': r_squared_steigend,
-            'r_squared_sinkend': r_squared_sinkend
+            'r_squared_sinkend': r_squared_sinkend,
+            'delta_alpha_total_steigend': delta_alpha_total_steigend,
+            'delta_alpha_total_sinkend': delta_alpha_total_sinkend
         }
 
     def get_board_data(self, board_nr):
@@ -267,3 +271,6 @@ class TKFehlerManager:
 
 # Initialisieren Sie die globale Variable
 TK_Fehler = TKFehlerManager()
+
+
+
