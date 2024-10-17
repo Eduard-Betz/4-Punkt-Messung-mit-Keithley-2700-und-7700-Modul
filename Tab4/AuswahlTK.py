@@ -174,10 +174,10 @@ def open_widerstand_window(window=None, phase="steigend"):
     x_max = max_time
 
     line1_ax1 = ax1.axvline(x=x_min, color='blue' if phase == "steigend" else 'red', linestyle='--')
-    line2_ax1 = ax1.axvline(x=x_max, color='blue', linestyle='--')
+    line2_ax1 = ax1.axvline(x=x_max, color='blue' if phase == "steigend" else 'red', linestyle='--')
 
     line1_ax2 = ax2.axvline(x=x_min, color='blue' if phase == "steigend" else 'red', linestyle='--')
-    line2_ax2 = ax2.axvline(x=x_max, color='blue', linestyle='--')
+    line2_ax2 = ax2.axvline(x=x_max, color='blue' if phase == "steigend" else 'red', linestyle='--')
 
     slider_frame = tk.Frame(window)
     slider_frame.pack(fill="x")
