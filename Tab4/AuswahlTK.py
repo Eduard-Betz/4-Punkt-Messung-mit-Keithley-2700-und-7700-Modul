@@ -18,7 +18,7 @@ def debug_print(message):
 def create_window(window=None, phase="steigend"):
     if window is None:
         window = tk.Toplevel()
-    window.title("Auswahl für die steigende Flanke" if phase == "steigend" else "Auswahl für die sinkende Flanke")
+    window.title("Auswahl für die steigende Flanke" if phase == "steigend" else "Auswahl für die fallende Flanke")
     return window
 
 def clear_window(window):
