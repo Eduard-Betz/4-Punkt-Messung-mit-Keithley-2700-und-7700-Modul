@@ -200,10 +200,10 @@ def fit_and_store_line_data_generic(plot_frame, steigung_auswahl, sinkend_auswah
         # Berechnung der Steigungen, Temperaturbereiche und R²-Werte
         def perform_linear_regression(temps, resists):
             if len(temps) < 2 or len(resists) < 2:
-                return None, (None, None), None, None  # Fügen Sie None für ∆αGesamt hinzu
+                return None, (None, None), None, None, None, None, None, None
 
             n = len(temps)
-            m, b = np.polyfit(temps, resists, 1)  # m ist die Steigung α
+            m, b = np.polyfit(temps, resists, 1)
             temp_bereich = (round(min(temps), 2), round(max(temps), 2))
 
             # Berechnung von R²
@@ -236,26 +236,38 @@ def fit_and_store_line_data_generic(plot_frame, steigung_auswahl, sinkend_auswah
                 term2 = (m * delta_T / Sxx) ** 2
                 term3 = delta_alpha ** 2 if delta_alpha is not None else 0
                 delta_alpha_total = np.sqrt(term1 + term2 + term3)
+                delta_alpha_total = round(delta_alpha_total, 5)  # Runden auf 5 Nachkommastellen
             else:
                 delta_alpha_total = None
-
             # Debugging-Ausgaben
-            print(f"\nDebugging-Informationen für Linearregression:")
-            print(f"  Anzahl der Datenpunkte (n): {n}")
-            print(f"  Sxx: {Sxx}")
-            print(f"  delta_T: {delta_T}")
-            print(f"  delta_alpha: {delta_alpha}")
-            print(f"  delta_alpha_total: {delta_alpha_total}")
+            if debugging_TKPlot:
+                
+                print(f"\nDebugging-Informationen für Linearregression:")
+                print(f"  Anzahl der Datenpunkte (n): {n}")
+                print(f"  Sxx: {Sxx}")
+                print(f"  delta_T: {delta_T}")
+                print(f"  delta_alpha: {delta_alpha}")
+                print(f"  delta_alpha_total: {delta_alpha_total}")
 
             # Rückgabe der berechneten Werte
-            return round(m, 5), temp_bereich, round(r_squared, 5) if r_squared is not None else None, delta_alpha_total
+            return (round(m, 5),
+                    temp_bereich,
+                    round(r_squared, 5) if r_squared is not None else None,
+                    delta_alpha_total,
+                    n,
+                    Sxx,
+                    delta_T,
+                    delta_alpha)
 
 
         # Steigende Flanke
-        steigung_steigend, temp_bereich_steigend, r_squared_steigend, delta_alpha_total_steigend = perform_linear_regression(temperatures_steigend, resistances_steigend)
+        (steigung_steigend, temp_bereich_steigend, r_squared_steigend, delta_alpha_total_steigend,
+        n_steigend, Sxx_steigend, delta_T_steigend, delta_alpha_steigend) = perform_linear_regression(temperatures_steigend, resistances_steigend)
 
         # Sinkende Flanke
-        steigung_sinkend, temp_bereich_sinkend, r_squared_sinkend, delta_alpha_total_sinkend = perform_linear_regression(temperatures_sinkend, resistances_sinkend)
+        (steigung_sinkend, temp_bereich_sinkend, r_squared_sinkend, delta_alpha_total_sinkend,
+        n_sinkend, Sxx_sinkend, delta_T_sinkend, delta_alpha_sinkend) = perform_linear_regression(temperatures_sinkend, resistances_sinkend)
+
 
 
 
@@ -281,7 +293,13 @@ def fit_and_store_line_data_generic(plot_frame, steigung_auswahl, sinkend_auswah
                 board_nr_str,
                 resistor_nr,
                 r_squared_steigend,
-                r_squared_sinkend
+                r_squared_sinkend,
+                delta_alpha_total_steigend,
+                delta_alpha_total_sinkend,
+                n_steigend, n_sinkend,
+                Sxx_steigend, Sxx_sinkend,
+                delta_T_steigend, delta_T_sinkend,
+                delta_alpha_steigend, delta_alpha_sinkend
             )
         else:
             TKBoardVariabeln.update_board_avg(
@@ -295,8 +313,16 @@ def fit_and_store_line_data_generic(plot_frame, steigung_auswahl, sinkend_auswah
                 board_nr_str,
                 resistor_nr,
                 r_squared_steigend,
-                r_squared_sinkend
+                r_squared_sinkend,
+                delta_alpha_total_steigend,
+                delta_alpha_total_sinkend,
+                n_steigend, n_sinkend,
+                Sxx_steigend, Sxx_sinkend,
+                delta_T_steigend, delta_T_sinkend,
+                delta_alpha_steigend, delta_alpha_sinkend
             )
+
+
 
         # Ergebnisse sammeln für die Ausgabe
         board_results.append({

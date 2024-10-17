@@ -107,7 +107,6 @@ def create_buttons(tab, button_positions):
         buttons.append(button)
     return buttons
 
-
 def print_errors():
     # Überprüfen, ob es Fehlerdaten gibt
     if not TK_Fehler.fehler_variablen:
@@ -127,6 +126,14 @@ def print_errors():
                 print(f"      R² sinkend: {normal_data.get('r_squared_sinkend')}")
                 print(f"      ∆αGesamt steigend: {normal_data.get('delta_alpha_total_steigend')}")
                 print(f"      ∆αGesamt sinkend: {normal_data.get('delta_alpha_total_sinkend')}")
+                print(f"      n steigend: {normal_data.get('n_steigend')}")
+                print(f"      n sinkend: {normal_data.get('n_sinkend')}")
+                print(f"      Sxx steigend: {normal_data.get('Sxx_steigend')}")
+                print(f"      Sxx sinkend: {normal_data.get('Sxx_sinkend')}")
+                print(f"      delta_T steigend: {normal_data.get('delta_T_steigend')}")
+                print(f"      delta_T sinkend: {normal_data.get('delta_T_sinkend')}")
+                print(f"      delta_alpha steigend: {normal_data.get('delta_alpha_steigend')}")
+                print(f"      delta_alpha sinkend: {normal_data.get('delta_alpha_sinkend')}")
             # Daten für 'avg' (mit durchschnittlicher Temperatur)
             if 'avg' in data:
                 avg_data = data['avg']
@@ -135,3 +142,11 @@ def print_errors():
                 print(f"      R² sinkend: {avg_data.get('r_squared_sinkend')}")
                 print(f"      ∆αGesamt steigend: {avg_data.get('delta_alpha_total_steigend')}")
                 print(f"      ∆αGesamt sinkend: {avg_data.get('delta_alpha_total_sinkend')}")
+                print(f"      n steigend: {avg_data.get('n_steigend')}")
+                print(f"      n sinkend: {avg_data.get('n_sinkend')}")
+                print(f"      Sxx steigend: {avg_data.get('Sxx_steigend')}")
+                print(f"      Sxx sinkend: {avg_data.get('Sxx_sinkend')}")
+                print(f"      delta_T steigend: {avg_data.get('delta_T_steigend')}")
+                print(f"      delta_T sinkend: {avg_data.get('delta_T_sinkend')}")
+                print(f"      delta_alpha steigend: {avg_data.get('delta_alpha_steigend')}")
+                print(f"      delta_alpha sinkend: {avg_data.get('delta_alpha_sinkend')}")
