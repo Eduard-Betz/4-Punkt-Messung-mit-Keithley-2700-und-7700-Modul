@@ -99,24 +99,24 @@ class SingleBoardLayout:
 
         # Labels und Entries für normale Daten
         tk.Label(self.board_frame, text=f"R{resistor_nr}").grid(row=row, column=0, padx=5, pady=5)
-        tk.Entry(self.board_frame, width=10, state="readonly",
+        tk.Entry(self.board_frame, width=10, state="readonly", justify="center",
                  textvariable=tk.StringVar(value=str(temp_min))).grid(row=row, column=1)
-        tk.Entry(self.board_frame, width=10, state="readonly",
+        tk.Entry(self.board_frame, width=10, state="readonly", justify="center",
                  textvariable=tk.StringVar(value=str(temp_max))).grid(row=row, column=2)
-        tk.Entry(self.board_frame, width=20, state="readonly",  # Breitere Spalte für ± Zeichen
+        tk.Entry(self.board_frame, width=20, state="readonly", justify="center",  # Breitere Spalte für ± Zeichen
                  textvariable=tk.StringVar(value=steigung_steigend_display)).grid(row=row, column=3)
-        tk.Entry(self.board_frame, width=20, state="readonly",
+        tk.Entry(self.board_frame, width=20, state="readonly", justify="center",
                  textvariable=tk.StringVar(value=steigung_sinkend_display)).grid(row=row, column=4)
 
         # Labels und Entries für gemittelte Daten
         tk.Label(self.board_frame, text=f"Gemit. R{resistor_nr}").grid(row=row+1, column=0, padx=5, pady=5)
-        tk.Entry(self.board_frame, width=10, state="readonly",
+        tk.Entry(self.board_frame, width=10, state="readonly", justify="center",
                  textvariable=tk.StringVar(value=str(avg_temp_min))).grid(row=row+1, column=1)
-        tk.Entry(self.board_frame, width=10, state="readonly",
+        tk.Entry(self.board_frame, width=10, state="readonly", justify="center",
                  textvariable=tk.StringVar(value=str(avg_temp_max))).grid(row=row+1, column=2)
-        tk.Entry(self.board_frame, width=20, state="readonly",
+        tk.Entry(self.board_frame, width=20, state="readonly", justify="center",
                  textvariable=tk.StringVar(value=steigung_avg_steigend_display)).grid(row=row+1, column=3)
-        tk.Entry(self.board_frame, width=20, state="readonly",
+        tk.Entry(self.board_frame, width=20, state="readonly", justify="center",
                  textvariable=tk.StringVar(value=steigung_avg_sinkend_display)).grid(row=row+1, column=4)
 
     def update_data(self):
