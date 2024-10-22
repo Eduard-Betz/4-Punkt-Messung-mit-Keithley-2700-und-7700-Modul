@@ -3,10 +3,12 @@
 from global_vars import TKBoardVariabeln, TK_Fehler, PlotAuswahl  # TK_Fehler importieren
 
 import pandas as pd
-from openpyxl.styles import Font, Alignment, PatternFill, Border, Side
+from openpyxl.styles import Font, Alignment, Border, Side
 import openpyxl.utils
 import tkinter as tk
 from tkinter import filedialog
+
+
 
 # Debug-Flag definieren
 debug_Tab4 = False  # Debug-Ausgaben sind standardmäßig deaktiviert
@@ -325,7 +327,12 @@ def print_tk_data():
 
 def TK_auswahl_zu_excel():
 
-    if PlotAuswahl is None:
+    # Überprüfen, ob PlotAuswahl definiert ist
+    try:
+        if PlotAuswahl is None:
+            print("Die Variable PlotAuswahl ist nicht definiert.")
+            return
+    except NameError:
         print("Die Variable PlotAuswahl ist nicht definiert.")
         return
 
@@ -344,8 +351,8 @@ def TK_auswahl_zu_excel():
         print("Speichern abgebrochen.")
         return
 
-    # Erstelle den ExcelWriter mit 'openpyxl' Engine
-    with pd.ExcelWriter(dateiname, engine='openpyxl') as writer:
+    # Erstelle den ExcelWriter mit 'xlsxwriter' Engine
+    with pd.ExcelWriter(dateiname, engine='xlsxwriter') as writer:
 
         # Liste der Datensätze und zugehörigen Sheetnamen
         datasets = []
@@ -404,124 +411,137 @@ def TK_auswahl_zu_excel():
             # Erstelle den DataFrame
             df = pd.DataFrame(daten)
 
-            # Schreibe den DataFrame in eine Excel-Datei mit Formatierungen
+            # Berechne die gemittelte Temperatur für jede Zeile
+            gemittelte_temperaturen = []
+            for idx, row in df.iterrows():
+                temperaturwerte = []
+                for board_name in sorted_boards:
+                    temp = row[f'{board_name} Temperatur']
+                    if pd.notnull(temp):
+                        temperaturwerte.append(temp)
+                if temperaturwerte:
+                    mittelwert = round(sum(temperaturwerte) / len(temperaturwerte), 2)
+                else:
+                    mittelwert = None
+                gemittelte_temperaturen.append(mittelwert)
+            df['Gemittelte Temperatur'] = gemittelte_temperaturen
+
+            # Schreibe den DataFrame in die Excel-Datei ohne Header
             df.to_excel(writer, sheet_name=sheet_name, index=False, header=False, startrow=3)
             workbook = writer.book
             worksheet = writer.sheets[sheet_name]
 
+            # Formatierungen
+            header_format = workbook.add_format({'bold': True, 'align': 'center', 'bg_color': '#C6EFCE', 'border': 1})
+            cell_format = workbook.add_format({'align': 'center', 'border': 1})
+
             # Erste Zeile: Titel
             header_title = f"Messwerte mit Boardtemperatur {sheet_name}"
-            total_columns = df.shape[1] + 1  # +1 für die zusätzliche Spalte
-            worksheet.merge_cells(start_row=1, start_column=1, end_row=1, end_column=total_columns)
-            cell = worksheet.cell(row=1, column=1)
-            cell.value = header_title
-            cell.font = Font(bold=True)
-            cell.alignment = Alignment(horizontal='center')
-            cell.fill = PatternFill(start_color='C6EFCE', end_color='C6EFCE', fill_type='solid')
+            total_columns = df.shape[1] - 1  # Subtrahiere 1, da DataFrame-Spalten bei 0 beginnen
+            worksheet.merge_range(0, 0, 0, total_columns, header_title, header_format)
 
             # Zweite Zeile: 'Messpunkt', 'Board 1', 'Board 2', ..., 'Gemittelte Temperatur'
-            worksheet.cell(row=2, column=1).value = 'Messpunkt'
-            worksheet.cell(row=2, column=1).font = Font(bold=True)
-            worksheet.cell(row=2, column=1).alignment = Alignment(horizontal='center')
-            worksheet.cell(row=2, column=1).fill = PatternFill(start_color='C6EFCE', end_color='C6EFCE', fill_type='solid')
+            worksheet.write(1, 0, 'Messpunkt', header_format)
 
-            col = 2
+            col = 1
             for board_name in sorted_boards:
-                worksheet.merge_cells(start_row=2, start_column=col, end_row=2, end_column=col + 1)
-                cell = worksheet.cell(row=2, column=col)
-                cell.value = board_name
-                cell.font = Font(bold=True)
-                cell.alignment = Alignment(horizontal='center')
-                cell.fill = PatternFill(start_color='C6EFCE', end_color='C6EFCE', fill_type='solid')
+                worksheet.merge_range(1, col, 1, col + 1, board_name, header_format)
                 col += 2
 
             # Zusätzliche Spalte für 'Gemittelte Temperatur'
-            cell = worksheet.cell(row=2, column=col)
-            cell.value = 'Gemittelte Temperatur'
-            cell.font = Font(bold=True)
-            cell.alignment = Alignment(horizontal='center')
-            cell.fill = PatternFill(start_color='C6EFCE', end_color='C6EFCE', fill_type='solid')
+            worksheet.write(1, col, 'Gemittelte Temperatur', header_format)
+            gemittelte_temperatur_col = col
 
             # Dritte Zeile: 'Widerstand 1', 'Temperatur', ..., ''
-            worksheet.cell(row=3, column=1).value = ''
-            worksheet.cell(row=3, column=1).fill = PatternFill(start_color='C6EFCE', end_color='C6EFCE', fill_type='solid')
-            col = 2
+            worksheet.write(2, 0, '', header_format)
+            col = 1
             for board_name in sorted_boards:
-                cell_widerstand = worksheet.cell(row=3, column=col)
-                cell_widerstand.value = 'Widerstand 1'
-                cell_widerstand.font = Font(bold=True)
-                cell_widerstand.alignment = Alignment(horizontal='center')
-                cell_widerstand.fill = PatternFill(start_color='C6EFCE', end_color='C6EFCE', fill_type='solid')
-
-                cell_temperatur = worksheet.cell(row=3, column=col + 1)
-                cell_temperatur.value = 'Temperatur'
-                cell_temperatur.font = Font(bold=True)
-                cell_temperatur.alignment = Alignment(horizontal='center')
-                cell_temperatur.fill = PatternFill(start_color='C6EFCE', end_color='C6EFCE', fill_type='solid')
-
+                worksheet.write(2, col, 'Widerstand 1', header_format)
+                worksheet.write(2, col + 1, 'Temperatur', header_format)
                 col += 2
 
-            # Leere Zelle unter 'Gemittelte Temperatur'
-            cell = worksheet.cell(row=3, column=col)
-            cell.value = ''
-            cell.fill = PatternFill(start_color='C6EFCE', end_color='C6EFCE', fill_type='solid')
+            worksheet.write(2, col, '', header_format)
 
-            # Schreibe die Daten und füge die Formel für die gemittelte Temperatur hinzu
-            for row_idx, row in enumerate(df.itertuples(index=False), start=4):
-                # Messpunkt
-                worksheet.cell(row=row_idx, column=1).value = row[0]
-                worksheet.cell(row=row_idx, column=1).alignment = Alignment(horizontal='center')
+            # Daten formatieren
+            for row_num in range(3, 3 + len(df)):
+                worksheet.set_row(row_num, None, cell_format)
 
-                col = 2
-                temperatur_cells = []
-                for board_name in sorted_boards:
-                    # Widerstand
-                    value_widerstand = row[df.columns.get_loc(f'{board_name} Widerstand 1')]
-                    worksheet.cell(row=row_idx, column=col).value = value_widerstand
-                    worksheet.cell(row=row_idx, column=col).alignment = Alignment(horizontal='center')
-                    # Temperatur
-                    value_temperatur = row[df.columns.get_loc(f'{board_name} Temperatur')]
-                    worksheet.cell(row=row_idx, column=col + 1).value = value_temperatur
-                    worksheet.cell(row=row_idx, column=col + 1).alignment = Alignment(horizontal='center')
+            # Spaltenbreite anpassen
+            for col_num in range(total_columns + 1):
+                worksheet.set_column(col_num, col_num, 15)
 
-                    # Speichere die Zelladresse der Temperatur
-                    temperatur_cell = worksheet.cell(row=row_idx, column=col + 1)
-                    temperatur_cells.append(temperatur_cell.coordinate)
-
-                    col += 2
-
-                # Formel für gemittelte Temperatur
-                if temperatur_cells:
-                    formel = f"=ROUND(AVERAGE({','.join(temperatur_cells)}),2)"
-                    cell = worksheet.cell(row=row_idx, column=col)
-                    cell.value = formel
-                    cell.alignment = Alignment(horizontal='center')
+            # Gemittelte Temperatur in Excel schreiben (bereits berechnet)
+            for idx, mittelwert in enumerate(gemittelte_temperaturen):
+                row_num = 3 + idx
+                if mittelwert is not None:
+                    worksheet.write_number(row_num, gemittelte_temperatur_col, mittelwert, cell_format)
                 else:
-                    # Falls keine Temperaturwerte vorhanden sind
-                    worksheet.cell(row=row_idx, column=col).value = None
+                    worksheet.write(row_num, gemittelte_temperatur_col, '', cell_format)
 
-            # Spaltenbreiten anpassen
-            for col_idx in range(1, worksheet.max_column + 1):
-                worksheet.column_dimensions[openpyxl.utils.get_column_letter(col_idx)].width = 15
+            # Farben für Boards definieren
+            colors = ['red', 'green', 'blue', 'yellow', 'magenta', 'cyan']
+            board_colors = {}
+            for idx, board_name in enumerate(sorted_boards):
+                color = colors[idx % len(colors)]
+                board_colors[board_name] = color
 
-            # Rahmen hinzufügen
-            thin_border = Border(
-                left=Side(style='thin'),
-                right=Side(style='thin'),
-                top=Side(style='thin'),
-                bottom=Side(style='thin')
-            )
+            # Diagramme erstellen
+            max_row = 3 + len(df)
+            chart_row = max_row + 2
+            for idx, board_name in enumerate(sorted_boards):
+                # Farbe für dieses Board erhalten
+                color = board_colors[board_name]
 
-            for row in worksheet.iter_rows(min_row=1, max_row=worksheet.max_row, min_col=1, max_col=worksheet.max_column):
-                for cell in row:
-                    cell.border = thin_border
+                # Spaltenindizes für Widerstand, Board-Temperatur und gemittelte Temperatur
+                col_widerstand = 1 + idx * 2  # Widerstandsspalte
+                col_temperatur = col_widerstand + 1  # Board-Temperaturspalte
+                col_gemittelte_temperatur = gemittelte_temperatur_col  # Gemittelte Temperatur
 
-            # Erste drei Zeilen grün einfärben
-            green_fill = PatternFill(start_color='C6EFCE', end_color='C6EFCE', fill_type='solid')
-            for row in range(1, 4):
-                for col in range(1, worksheet.max_column + 1):
-                    cell = worksheet.cell(row=row, column=col)
-                    cell.fill = green_fill
+                # Erstes Diagramm: Widerstand über Board-Temperatur
+                chart1 = workbook.add_chart({'type': 'scatter', 'subtype': 'straight_with_markers'})
+                chart1.add_series({
+                    'name':       board_name,
+                    'categories': [sheet_name, 3, col_temperatur, max_row - 1, col_temperatur],
+                    'values':     [sheet_name, 3, col_widerstand, max_row - 1, col_widerstand],
+                    'marker':     {'type': 'circle', 'size': 7, 'fill': {'color': color}},
+                    'line':       {'none': True},
+                    'trendline': {
+                        'type': 'linear',
+                        'display_equation': True,
+                        'display_r_squared': True,
+                    },
+                })
+                chart1.set_title({'name': f"{board_name} - Widerstand über Board-Temperatur ({sheet_name})"})
+                chart1.set_x_axis({'name': 'Temperatur (°C)'})
+                chart1.set_y_axis({'name': 'Widerstand (Ohm)'})
+                chart1.set_legend({'none': True})
+
+                # Zweites Diagramm: Widerstand über gemittelte Temperatur
+                chart2 = workbook.add_chart({'type': 'scatter', 'subtype': 'straight_with_markers'})
+                chart2.add_series({
+                    'name':       board_name,
+                    'categories': [sheet_name, 3, col_gemittelte_temperatur, max_row - 1, col_gemittelte_temperatur],
+                    'values':     [sheet_name, 3, col_widerstand, max_row - 1, col_widerstand],
+                    'marker':     {'type': 'circle', 'size': 7, 'fill': {'color': color}},
+                    'line':       {'none': True},
+                    'trendline': {
+                        'type': 'linear',
+                        'display_equation': True,
+                        'display_r_squared': True,
+                    },
+                })
+                chart2.set_title({'name': f"{board_name} - Widerstand über Gemittelte Temperatur ({sheet_name})"})
+                chart2.set_x_axis({'name': 'Gemittelte Temperatur (°C)'})
+                chart2.set_y_axis({'name': 'Widerstand (Ohm)'})
+                chart2.set_legend({'none': True})
+
+                # Diagramme nebeneinander platzieren
+                chart1_cell = f"A{chart_row + idx * 20}"
+                chart2_cell = f"M{chart_row + idx * 20}"
+
+                worksheet.insert_chart(chart1_cell, chart1, {'x_scale': 1.5, 'y_scale': 1.5})
+                worksheet.insert_chart(chart2_cell, chart2, {'x_scale': 1.5, 'y_scale': 1.5})
 
         print(f'Daten erfolgreich in {dateiname} gespeichert.')
+
 
