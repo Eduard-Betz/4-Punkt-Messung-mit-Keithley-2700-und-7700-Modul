@@ -9,7 +9,7 @@ from Tab2.TabBoards import create_board_tab, update_dropdowns, PreBoardConfig
 from Tab2.ConfigTranslator import translate_boardconfig_to_preboard, print_preboard_config
 from Tab2.CheckBoardConfig import show_check_result
 from Tab2.BoardConfigSaveNLoad import save_config, load_config
-from Tab2.ReconnectBoard import reconnect_devices  # Importieren der Reconnect-Funktion
+
 
 # Definieren des Debug-Flags und der debug_print-Funktion
 DEBUG = False
@@ -24,8 +24,7 @@ def create_tab2(notebook):
 
     button_positions = [
         ("Speichern", 0.0, lambda: save_file()),
-        ("Reconekt", 0.1, lambda: reconnect_devices(tab2)),  # Hinzufügen der Reconnect-Funktion
-        ("Überprüfen", 0.2, lambda: on_check_button_click(True)),
+        ("Überprüfen", 0.1, lambda: on_check_button_click(True)),
         ("Laden", 0.8, lambda: load_file(tab2)),
         ("Weiter", 0.9, lambda: handle_next_button_click(notebook))
     ]
