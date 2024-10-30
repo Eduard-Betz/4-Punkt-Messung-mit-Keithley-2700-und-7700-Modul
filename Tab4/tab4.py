@@ -6,7 +6,7 @@ from time import sleep
 
 from global_vars import PlotAuswahl, TK_Fehler, TKBoardVariabeln
 
-from Tab4.Data_to_excel import print_tk_data, TK_auswahl_zu_excel
+from Tab4.Data_to_excel import print_tk_data
 from Tab4.TKPlot import (
     plot_resistance_vs_temperature,
     plot_resistance_vs_avg_temperature,
@@ -91,7 +91,7 @@ def create_tab4(notebook):
         ("Plot erstellen", 0, open_and_plot),
         ("TK Berechnen", 0.1, TKBerechnen),
         ("TK zu Exel Tabelle", 0.8, print_tk_data),
-        ("Knopf 4", 0.9, TK_auswahl_zu_excel)
+        ("Knopf 4", 0.9, None)
     ]
 
     buttons = create_buttons(tab4, button_positions)

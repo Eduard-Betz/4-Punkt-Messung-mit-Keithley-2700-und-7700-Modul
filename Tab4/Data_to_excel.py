@@ -22,7 +22,7 @@ def print_tk_data():
     # Öffne einen Dialog, um den Speicherort der Excel-Datei zu wählen
     file_path = filedialog.asksaveasfilename(
         defaultextension='.xlsx',
-        filetypes=[('Excel files', '*.xlsx'), ('All files', '*.*')],
+        filetypes=[('Excel Dateien', '*.xlsx'), ('Alle Dateien', '*.*')],
         title='Excel-Datei speichern'
     )
 
@@ -124,7 +124,7 @@ def print_tk_data():
         debug_print("Keine Daten zum Exportieren gefunden.")
         return
 
-    # Spalten definieren und neue Spalten hinzufügen
+    # Spalten definieren
     columns = [
         'Board Nr.', 'Probe',
         'TK_steigende', 'Fehler ±_steigende', 'R²_steigende', 'min temp_steigende', 'max temp_steigende',
@@ -134,225 +134,90 @@ def print_tk_data():
     normal_df = pd.DataFrame(normal_data_list, columns=columns)
     avg_df = pd.DataFrame(avg_data_list, columns=columns)
 
-    # Daten in Excel schreiben
-    with pd.ExcelWriter(file_path, engine='openpyxl') as writer:
-        normal_header = "TK mit Board Temperatur"
-        avg_header = "TK mit gemittelte Temperatur über alle Boards"
-
-        # Schreibe die normale Tabelle ab Zeile 3 (startrow=2 wegen nullbasierter Indizierung)
-        normal_table_start_row = 3
-        normal_df.to_excel(writer, sheet_name='Sheet1', index=False, startrow=normal_table_start_row - 1, header=True)
-
-        # Jetzt haben wir Daten geschrieben, wir können die workbook und worksheet erhalten
+    # Daten in Excel schreiben mit xlsxwriter
+    with pd.ExcelWriter(file_path, engine='xlsxwriter') as writer:
         workbook = writer.book
-        worksheet = writer.sheets['Sheet1']
 
-        # Schreibe die Überschrift für die erste Tabelle in Zeile 1
-        normal_header_row_excel = 1
-        worksheet.cell(row=normal_header_row_excel, column=1).value = normal_header
-        worksheet.merge_cells(start_row=normal_header_row_excel, start_column=1, end_row=normal_header_row_excel, end_column=len(columns))
-        header_cell = worksheet.cell(row=normal_header_row_excel, column=1)
-        header_cell.font = Font(bold=True, size=14)
-        header_cell.alignment = Alignment(horizontal='center')
+        # Schreibe normal_df in das erste Tabellenblatt 'TK_Data'
+        sheet_name = 'TK_Data'
+        normal_header = "TK mit Board Temperatur"
+        normal_df.to_excel(writer, sheet_name=sheet_name, index=False, startrow=2)
 
-        # Füge die Gruppenkopfzeile hinzu
-        group_header_row = normal_table_start_row - 1  # Zeile für Gruppenkopfzeilen
-        column_header_row = normal_table_start_row     # Zeile für Spaltenüberschriften
+        # Holen Sie sich das Arbeitsblatt und wenden Sie Formatierungen an
+        worksheet = writer.sheets[sheet_name]
 
-        # Gruppenkopfzeilen hinzufügen und Zellen zusammenführen
-        # "Steigende Flanke" über Spalten 3 bis 7
-        worksheet.merge_cells(start_row=group_header_row, start_column=3, end_row=group_header_row, end_column=7)
-        steigende_cell = worksheet.cell(row=group_header_row, column=3)
-        steigende_cell.value = "Steigende Flanke"
-        steigende_cell.alignment = Alignment(horizontal='center', vertical='center')
-        steigende_cell.font = Font(bold=True)
-        steigende_cell.border = Border(
-            bottom=Side(style='thick'),  # Ändere von 'medium' zu 'thick'
-            top=Side(style='thick'),     # Ändere von 'medium' zu 'thick'
-            left=Side(style='thick'),    # Ändere von 'medium' zu 'thick'
-            right=Side(style='thick')    # Ändere von 'medium' zu 'thick'
-        )
+        # Formate definieren
+        header_format = workbook.add_format({'bold': True, 'align': 'center', 'font_size': 14})
+        group_header_format = workbook.add_format({'bold': True, 'align': 'center', 'border': 2})
+        column_header_format = workbook.add_format({'bold': True, 'align': 'center', 'bottom': 1})
+        cell_format = workbook.add_format({'align': 'center'})
 
-        # "Fallende Flanke" über Spalten 8 bis 12
-        worksheet.merge_cells(start_row=group_header_row, start_column=8, end_row=group_header_row, end_column=12)
-        fallende_cell = worksheet.cell(row=group_header_row, column=8)
-        fallende_cell.value = "Fallende Flanke"
-        fallende_cell.alignment = Alignment(horizontal='center', vertical='center')
-        fallende_cell.font = Font(bold=True)
-        fallende_cell.border = Border(
-            bottom=Side(style='thick'),  # Ändere von 'medium' zu 'thick'
-            top=Side(style='thick'),     # Ändere von 'medium' zu 'thick'
-            left=Side(style='thick'),    # Ändere von 'medium' zu 'thick'
-            right=Side(style='thick')    # Ändere von 'medium' zu 'thick'
-        )
+        # Überschrift für normale Daten schreiben
+        normal_header_row_excel = 0
+        worksheet.merge_range(normal_header_row_excel, 0, normal_header_row_excel, len(columns)-1, normal_header, header_format)
 
+        # Gruppenkopfzeilen hinzufügen
+        group_header_row = 1  # Zeile für Gruppenkopfzeilen
+        column_header_row = 2  # Zeile für Spaltenüberschriften
 
-        # Suffixe aus Spaltenüberschriften entfernen und '∆αGesamt' zu 'Fehler ±' ersetzen
-        for col_num in range(1, len(columns) + 1):
-            cell = worksheet.cell(row=column_header_row, column=col_num)
-            if '_steigende' in cell.value:
-                cell.value = cell.value.replace('_steigende', '')
-            elif '_fallende' in cell.value:
-                cell.value = cell.value.replace('_fallende', '')
-            # Ersetzen von '∆αGesamt' durch 'Fehler ±'
-            if '∆αGesamt' in cell.value:
-                cell.value = 'Fehler ±'
-            cell.alignment = Alignment(horizontal='center', vertical='center')
-            cell.font = Font(bold=True)
-            # Rahmen für Spaltenüberschriften
-            cell.border = Border(bottom=Side(style='thin'))
+        # "Steigende Flanke" über Spalten 2 bis 6 (Indizes beginnen bei 0)
+        worksheet.merge_range(group_header_row, 2, group_header_row, 6, 'Steigende Flanke', group_header_format)
 
+        # "Fallende Flanke" über Spalten 7 bis 11
+        worksheet.merge_range(group_header_row, 7, group_header_row, 11, 'Fallende Flanke', group_header_format)
 
-        # Berechne die Endzeile der normalen Tabelle
-        normal_table_end_row = normal_table_start_row + len(normal_df)  # Ohne -1
+        # Suffixe aus Spaltenüberschriften entfernen und formatieren
+        for col_num, value in enumerate(columns):
+            header_text = value.replace('_steigende', '').replace('_fallende', '').replace('∆αGesamt', 'Fehler ±')
+            worksheet.write(column_header_row, col_num, header_text, column_header_format)
+            worksheet.set_column(col_num, col_num, 20)
 
-        # Füge 10 leere Zeilen zwischen den Tabellen
-        avg_header_row = normal_table_end_row + 10
+        # Datenzellen formatieren
+        normal_table_start_row = 3
+        normal_table_end_row = normal_table_start_row + len(normal_df)
+        for row_num in range(normal_table_start_row, normal_table_end_row):
+            worksheet.set_row(row_num, None, cell_format)
 
-        # Schreibe die Überschrift für die zweite Tabelle
-        worksheet.cell(row=avg_header_row, column=1).value = avg_header
-        worksheet.merge_cells(start_row=avg_header_row, start_column=1, end_row=avg_header_row, end_column=len(columns))
-        header_cell = worksheet.cell(row=avg_header_row, column=1)
-        header_cell.font = Font(bold=True, size=14)
-        header_cell.alignment = Alignment(horizontal='center')
+        # Schreibe avg_df unter normal_df mit etwas Abstand
+        avg_header_row = normal_table_end_row + 2
+        avg_header = "TK mit gemittelter Temperatur über alle Boards"
+        worksheet.merge_range(avg_header_row, 0, avg_header_row, len(columns)-1, avg_header, header_format)
 
-        # Schreibe die avg-Tabelle ab der berechneten Zeile
-        avg_table_start_row = avg_header_row + 2  # +2 um die Gruppenkopfzeilen einzuschließen
-        avg_df.to_excel(writer, sheet_name='Sheet1', index=False, startrow=avg_table_start_row - 1, header=True)
+        # Gruppenkopfzeilen für avg-Daten hinzufügen
+        group_header_row_avg = avg_header_row + 1
+        column_header_row_avg = avg_header_row + 2
 
-        # Füge die Gruppenkopfzeile für die avg-Tabelle hinzu
-        group_header_row_avg = avg_table_start_row - 1  # Zeile für Gruppenkopfzeilen
-        column_header_row_avg = avg_table_start_row     # Zeile für Spaltenüberschriften
+        worksheet.merge_range(group_header_row_avg, 2, group_header_row_avg, 6, 'Steigende Flanke', group_header_format)
+        worksheet.merge_range(group_header_row_avg, 7, group_header_row_avg, 11, 'Fallende Flanke', group_header_format)
 
-        # Gruppenkopfzeilen hinzufügen und Zellen zusammenführen
-        # "Steigende Flanke" über Spalten 3 bis 7
-        worksheet.merge_cells(start_row=group_header_row_avg, start_column=3, end_row=group_header_row_avg, end_column=7)
-        steigende_cell_avg = worksheet.cell(row=group_header_row_avg, column=3)
-        steigende_cell_avg.value = "Steigende Flanke"
-        steigende_cell_avg.alignment = Alignment(horizontal='center', vertical='center')
-        steigende_cell_avg.font = Font(bold=True)
-        steigende_cell_avg.border = Border(
-            bottom=Side(style='medium'),
-            top=Side(style='medium'),
-            left=Side(style='medium'),
-            right=Side(style='medium')
-        )
+        # Suffixe aus Spaltenüberschriften entfernen und formatieren
+        for col_num, value in enumerate(columns):
+            header_text = value.replace('_steigende', '').replace('_fallende', '').replace('∆αGesamt', 'Fehler ±')
+            worksheet.write(column_header_row_avg, col_num, header_text, column_header_format)
+            # Wenden Sie das Zellenformat auf die gesamte Spalte an
+            worksheet.set_column(col_num, col_num, 20, cell_format)
 
-        # "Fallende Flanke" über Spalten 8 bis 12
-        worksheet.merge_cells(start_row=group_header_row_avg, start_column=8, end_row=group_header_row_avg, end_column=12)
-        fallende_cell_avg = worksheet.cell(row=group_header_row_avg, column=8)
-        fallende_cell_avg.value = "Fallende Flanke"
-        fallende_cell_avg.alignment = Alignment(horizontal='center', vertical='center')
-        fallende_cell_avg.font = Font(bold=True)
-        fallende_cell_avg.border = Border(
-            bottom=Side(style='medium'),
-            top=Side(style='medium'),
-            left=Side(style='medium'),
-            right=Side(style='medium')
-        )
-
-        # Suffixe aus Spaltenüberschriften entfernen und Formatierung anwenden
-        for col_num in range(1, len(columns) + 1):
-            cell = worksheet.cell(row=column_header_row_avg, column=col_num)
-            if '_steigende' in cell.value:
-                cell.value = cell.value.replace('_steigende', '')
-            elif '_fallende' in cell.value:
-                cell.value = cell.value.replace('_fallende', '')
-            cell.alignment = Alignment(horizontal='center', vertical='center')
-            cell.font = Font(bold=True)
-            # Rahmen für Spaltenüberschriften
-            cell.border = Border(bottom=Side(style='thin'))
-
-        # Berechne die Endzeile der avg-Tabelle
-        avg_table_end_row = avg_table_start_row + len(avg_df)  # Ohne -1
-
-        # Rahmen und Formatierungen anwenden
-        # Definiere Rahmenstile
-        thin_border = Side(border_style="thin", color="000000")
-        thick_border = Side(border_style="thick", color="000000")
-
-        def apply_table_border(ws, start_row, end_row, start_col, end_col):
-            for row in ws.iter_rows(min_row=start_row, max_row=end_row, min_col=start_col, max_col=end_col):
-                for cell in row:
-                    border_sides = {
-                        'left': thin_border,
-                        'right': thin_border,
-                        'top': thin_border,
-                        'bottom': thin_border
-                    }
-
-                    # Äußere Ränder der Tabelle mit 'thick'
-                    if cell.row == start_row:
-                        border_sides['top'] = thick_border
-                    if cell.row == end_row:
-                        border_sides['bottom'] = thick_border
-                    if cell.column == start_col:
-                        border_sides['left'] = thick_border
-                    if cell.column == end_col:
-                        border_sides['right'] = thick_border
-
-                    cell.border = Border(**border_sides)
+        # Schreibe avg_df-Daten ohne Header
+        avg_df.to_excel(writer, sheet_name=sheet_name, index=False, header=False, startrow=column_header_row_avg+1)
 
 
-        # Rahmen für die normale Tabelle anwenden (einschließlich Gruppenkopfzeilen)
-        apply_table_border(
-            worksheet,
-            group_header_row,  # Startzeile des Rahmens (Gruppenkopfzeilen)
-            normal_table_end_row,  # Endzeile der Daten
-            1,
-            len(columns)
-        )
 
-        # Rahmen für die avg-Tabelle anwenden (einschließlich Gruppenkopfzeilen)
-        apply_table_border(
-            worksheet,
-            group_header_row_avg,  # Startzeile des Rahmens (Gruppenkopfzeilen)
-            avg_table_end_row,     # Endzeile der Daten
-            1,
-            len(columns)
-        )
+        # Datenzellen formatieren
+        avg_table_start_row = column_header_row_avg + 2
+        avg_table_end_row = avg_table_start_row + len(avg_df)
+        for row_num in range(avg_table_start_row, avg_table_end_row):
+            worksheet.set_row(row_num, None, cell_format)
 
-        # Spaltenbreiten anpassen
-        for i, column in enumerate(columns, 1):
-            worksheet.column_dimensions[openpyxl.utils.get_column_letter(i)].width = 20
+        # Nun integrieren wir die Funktionalität von TK_auswahl_zu_excel()
 
-        # Ausrichtung für alle Zellen anpassen
-        for row in worksheet.iter_rows(min_row=1, max_row=worksheet.max_row, min_col=1, max_col=len(columns)):
-            for cell in row:
-                cell.alignment = Alignment(horizontal='center', vertical='center')
-
-    # Erfolgsmeldung
-    print(f"Excel-Datei wurde gespeichert unter: {file_path}")
-
-
-def TK_auswahl_zu_excel():
-
-    # Überprüfen, ob PlotAuswahl definiert ist
-    try:
-        if PlotAuswahl is None:
+        # Überprüfen, ob PlotAuswahl definiert ist
+        try:
+            if PlotAuswahl is None:
+                print("Die Variable PlotAuswahl ist nicht definiert.")
+                return
+        except NameError:
             print("Die Variable PlotAuswahl ist nicht definiert.")
             return
-    except NameError:
-        print("Die Variable PlotAuswahl ist nicht definiert.")
-        return
-
-    # Öffne ein Speichern-unter-Dialog, um den Dateinamen und Speicherort auszuwählen
-    root = tk.Tk()
-    root.withdraw()  # Versteckt das Hauptfenster
-    root.call('wm', 'attributes', '.', '-topmost', True)  # Bringt das Fenster in den Vordergrund
-
-    dateiname = filedialog.asksaveasfilename(
-        defaultextension='.xlsx',
-        filetypes=[('Excel Dateien', '*.xlsx'), ('Alle Dateien', '*.*')],
-        title="Speichern unter"
-    )
-
-    if not dateiname:
-        print("Speichern abgebrochen.")
-        return
-
-    # Erstelle den ExcelWriter mit 'xlsxwriter' Engine
-    with pd.ExcelWriter(dateiname, engine='xlsxwriter') as writer:
 
         # Liste der Datensätze und zugehörigen Sheetnamen
         datasets = []
@@ -365,7 +230,7 @@ def TK_auswahl_zu_excel():
             print("Keine gültigen Daten in PlotAuswahl gefunden.")
             return
 
-        for sheet_name, plot_data in datasets:
+        for sheet_name_plot, plot_data in datasets:
             status, boards_data = plot_data
 
             # Ermitteln der maximalen Anzahl von Messpunkten
@@ -427,16 +292,15 @@ def TK_auswahl_zu_excel():
             df['Gemittelte Temperatur'] = gemittelte_temperaturen
 
             # Schreibe den DataFrame in die Excel-Datei ohne Header
-            df.to_excel(writer, sheet_name=sheet_name, index=False, header=False, startrow=3)
-            workbook = writer.book
-            worksheet = writer.sheets[sheet_name]
+            df.to_excel(writer, sheet_name=sheet_name_plot, index=False, header=False, startrow=3)
+            worksheet = writer.sheets[sheet_name_plot]
 
-            # Formatierungen
+            # Formate definieren
             header_format = workbook.add_format({'bold': True, 'align': 'center', 'bg_color': '#C6EFCE', 'border': 1})
             cell_format = workbook.add_format({'align': 'center', 'border': 1})
 
             # Erste Zeile: Titel
-            header_title = f"Messwerte mit Boardtemperatur {sheet_name}"
+            header_title = f"Messwerte mit Boardtemperatur {sheet_name_plot}"
             total_columns = df.shape[1] - 1  # Subtrahiere 1, da DataFrame-Spalten bei 0 beginnen
             worksheet.merge_range(0, 0, 0, total_columns, header_title, header_format)
 
@@ -463,7 +327,8 @@ def TK_auswahl_zu_excel():
             worksheet.write(2, col, '', header_format)
 
             # Daten formatieren
-            for row_num in range(3, 3 + len(df)):
+            max_row = 3 + len(df)
+            for row_num in range(3, max_row):
                 worksheet.set_row(row_num, None, cell_format)
 
             # Spaltenbreite anpassen
@@ -486,7 +351,6 @@ def TK_auswahl_zu_excel():
                 board_colors[board_name] = color
 
             # Diagramme erstellen
-            max_row = 3 + len(df)
             chart_row = max_row + 2
             for idx, board_name in enumerate(sorted_boards):
                 # Farbe für dieses Board erhalten
@@ -501,8 +365,8 @@ def TK_auswahl_zu_excel():
                 chart1 = workbook.add_chart({'type': 'scatter', 'subtype': 'straight_with_markers'})
                 chart1.add_series({
                     'name':       board_name,
-                    'categories': [sheet_name, 3, col_temperatur, max_row - 1, col_temperatur],
-                    'values':     [sheet_name, 3, col_widerstand, max_row - 1, col_widerstand],
+                    'categories': [sheet_name_plot, 3, col_temperatur, max_row - 1, col_temperatur],
+                    'values':     [sheet_name_plot, 3, col_widerstand, max_row - 1, col_widerstand],
                     'marker':     {'type': 'circle', 'size': 7, 'fill': {'color': color}},
                     'line':       {'none': True},
                     'trendline': {
@@ -511,7 +375,7 @@ def TK_auswahl_zu_excel():
                         'display_r_squared': True,
                     },
                 })
-                chart1.set_title({'name': f"{board_name} - Widerstand über Board-Temperatur ({sheet_name})"})
+                chart1.set_title({'name': f"{board_name} - Widerstand über Board-Temperatur ({sheet_name_plot})"})
                 chart1.set_x_axis({'name': 'Temperatur (°C)'})
                 chart1.set_y_axis({'name': 'Widerstand (Ohm)'})
                 chart1.set_legend({'none': True})
@@ -520,8 +384,8 @@ def TK_auswahl_zu_excel():
                 chart2 = workbook.add_chart({'type': 'scatter', 'subtype': 'straight_with_markers'})
                 chart2.add_series({
                     'name':       board_name,
-                    'categories': [sheet_name, 3, col_gemittelte_temperatur, max_row - 1, col_gemittelte_temperatur],
-                    'values':     [sheet_name, 3, col_widerstand, max_row - 1, col_widerstand],
+                    'categories': [sheet_name_plot, 3, col_gemittelte_temperatur, max_row - 1, col_gemittelte_temperatur],
+                    'values':     [sheet_name_plot, 3, col_widerstand, max_row - 1, col_widerstand],
                     'marker':     {'type': 'circle', 'size': 7, 'fill': {'color': color}},
                     'line':       {'none': True},
                     'trendline': {
@@ -530,7 +394,7 @@ def TK_auswahl_zu_excel():
                         'display_r_squared': True,
                     },
                 })
-                chart2.set_title({'name': f"{board_name} - Widerstand über Gemittelte Temperatur ({sheet_name})"})
+                chart2.set_title({'name': f"{board_name} - Widerstand über Gemittelte Temperatur ({sheet_name_plot})"})
                 chart2.set_x_axis({'name': 'Gemittelte Temperatur (°C)'})
                 chart2.set_y_axis({'name': 'Widerstand (Ohm)'})
                 chart2.set_legend({'none': True})
@@ -542,6 +406,6 @@ def TK_auswahl_zu_excel():
                 worksheet.insert_chart(chart1_cell, chart1, {'x_scale': 1.5, 'y_scale': 1.5})
                 worksheet.insert_chart(chart2_cell, chart2, {'x_scale': 1.5, 'y_scale': 1.5})
 
-        print(f'Daten erfolgreich in {dateiname} gespeichert.')
-
+        # Erfolgsmeldung
+        print(f"Excel-Datei wurde gespeichert unter: {file_path}")
 
