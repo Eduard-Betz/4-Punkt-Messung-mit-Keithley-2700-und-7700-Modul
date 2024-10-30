@@ -153,9 +153,6 @@ def setup_buttons(window, phase, slider1_value, slider2_value, plot_werte):
     weiter_button = tk.Button(button_frame, text="Weiter", command=weiter, bg="#99FF99", fg="black")
     weiter_button.pack(side="right", padx=10)
 
-    save_button = tk.Button(window, text="Speichern", command=lambda: save_selection(phase, slider1_value, slider2_value, plot_werte, save_data=True), bg="#CCCCFF", fg="black")
-    save_button.place(relx=0.5, rely=0.98, anchor='s')
-
 def open_widerstand_window(window=None, phase="steigend"):
     window = create_window(window, phase)
     clear_window(window)
