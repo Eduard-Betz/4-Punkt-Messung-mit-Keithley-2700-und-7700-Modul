@@ -3,9 +3,6 @@
 from global_vars import TKBoardVariabeln, TK_Fehler, PlotAuswahl  # TK_Fehler importieren
 
 import pandas as pd
-from openpyxl.styles import Font, Alignment, Border, Side
-import openpyxl.utils
-import tkinter as tk
 from tkinter import filedialog
 
 
@@ -138,13 +135,10 @@ def print_tk_data():
     with pd.ExcelWriter(file_path, engine='xlsxwriter') as writer:
         workbook = writer.book
 
-        # Schreibe normal_df in das erste Tabellenblatt 'TK_Data'
+        # Erstes Tabellenblatt erstellen
         sheet_name = 'TK_Data'
-        normal_header = "TK mit Board Temperatur"
-        normal_df.to_excel(writer, sheet_name=sheet_name, index=False, startrow=2)
-
-        # Holen Sie sich das Arbeitsblatt und wenden Sie Formatierungen an
-        worksheet = writer.sheets[sheet_name]
+        worksheet = workbook.add_worksheet(sheet_name)
+        writer.sheets[sheet_name] = worksheet
 
         # Formate definieren
         header_format = workbook.add_format({'bold': True, 'align': 'center', 'font_size': 14})
@@ -154,13 +148,14 @@ def print_tk_data():
 
         # Überschrift für normale Daten schreiben
         normal_header_row_excel = 0
+        normal_header = "TK mit Board Temperatur"
         worksheet.merge_range(normal_header_row_excel, 0, normal_header_row_excel, len(columns)-1, normal_header, header_format)
 
         # Gruppenkopfzeilen hinzufügen
         group_header_row = 1  # Zeile für Gruppenkopfzeilen
         column_header_row = 2  # Zeile für Spaltenüberschriften
 
-        # "Steigende Flanke" über Spalten 2 bis 6 (Indizes beginnen bei 0)
+        # "Steigende Flanke" über Spalten 2 bis 6
         worksheet.merge_range(group_header_row, 2, group_header_row, 6, 'Steigende Flanke', group_header_format)
 
         # "Fallende Flanke" über Spalten 7 bis 11
@@ -170,16 +165,60 @@ def print_tk_data():
         for col_num, value in enumerate(columns):
             header_text = value.replace('_steigende', '').replace('_fallende', '').replace('∆αGesamt', 'Fehler ±')
             worksheet.write(column_header_row, col_num, header_text, column_header_format)
-            worksheet.set_column(col_num, col_num, 20)
+            # Wenden Sie das Zellenformat auf die gesamte Spalte an
+            worksheet.set_column(col_num, col_num, 20, cell_format)
 
-        # Datenzellen formatieren
+        # Daten manuell schreiben und Rahmen anwenden
         normal_table_start_row = 3
-        normal_table_end_row = normal_table_start_row + len(normal_df)
-        for row_num in range(normal_table_start_row, normal_table_end_row):
-            worksheet.set_row(row_num, None, cell_format)
+        data_values = normal_df.values.tolist()
+        num_rows = len(data_values)
+        num_cols = len(columns)
+        for row_idx, row_data in enumerate(data_values):
+            excel_row = normal_table_start_row + row_idx
+            for col_idx, cell_value in enumerate(row_data):
+                excel_col = col_idx
+
+                # Standardformat
+                fmt_dict = {'align': 'center'}
+
+                # Rahmen für Steigende Flanke
+                if 2 <= excel_col <= 6:
+                    # Zelle an der oberen Grenze
+                    if excel_row == normal_table_start_row:
+                        fmt_dict['top'] = 2
+                    # Zelle an der unteren Grenze
+                    if excel_row == normal_table_start_row + num_rows - 1:
+                        fmt_dict['bottom'] = 2
+                    # Zelle an der linken Grenze
+                    if excel_col == 2:
+                        fmt_dict['left'] = 2
+                    # Zelle an der rechten Grenze
+                    if excel_col == 6:
+                        fmt_dict['right'] = 2
+
+                # Rahmen für Fallende Flanke
+                if 7 <= excel_col <= 11:
+                    # Zelle an der oberen Grenze
+                    if excel_row == normal_table_start_row:
+                        fmt_dict['top'] = 2
+                    # Zelle an der unteren Grenze
+                    if excel_row == normal_table_start_row + num_rows - 1:
+                        fmt_dict['bottom'] = 2
+                    # Zelle an der linken Grenze
+                    if excel_col == 7:
+                        fmt_dict['left'] = 2
+                    # Zelle an der rechten Grenze
+                    if excel_col == 11:
+                        fmt_dict['right'] = 2
+
+                # Format erstellen
+                fmt = workbook.add_format(fmt_dict)
+
+                # Zelle schreiben
+                worksheet.write(excel_row, excel_col, cell_value, fmt)
 
         # Schreibe avg_df unter normal_df mit etwas Abstand
-        avg_header_row = normal_table_end_row + 2
+        avg_header_row = normal_table_start_row + num_rows + 2
         avg_header = "TK mit gemittelter Temperatur über alle Boards"
         worksheet.merge_range(avg_header_row, 0, avg_header_row, len(columns)-1, avg_header, header_format)
 
@@ -197,16 +236,53 @@ def print_tk_data():
             # Wenden Sie das Zellenformat auf die gesamte Spalte an
             worksheet.set_column(col_num, col_num, 20, cell_format)
 
-        # Schreibe avg_df-Daten ohne Header
-        avg_df.to_excel(writer, sheet_name=sheet_name, index=False, header=False, startrow=column_header_row_avg+1)
+        # Daten manuell schreiben und Rahmen anwenden
+        avg_table_start_row = column_header_row_avg + 1
+        data_values = avg_df.values.tolist()
+        num_rows_avg = len(data_values)
+        for row_idx, row_data in enumerate(data_values):
+            excel_row = avg_table_start_row + row_idx
+            for col_idx, cell_value in enumerate(row_data):
+                excel_col = col_idx
 
+                # Standardformat
+                fmt_dict = {'align': 'center'}
 
+                # Rahmen für Steigende Flanke
+                if 2 <= excel_col <= 6:
+                    # Zelle an der oberen Grenze
+                    if excel_row == avg_table_start_row:
+                        fmt_dict['top'] = 2
+                    # Zelle an der unteren Grenze
+                    if excel_row == avg_table_start_row + num_rows_avg - 1:
+                        fmt_dict['bottom'] = 2
+                    # Zelle an der linken Grenze
+                    if excel_col == 2:
+                        fmt_dict['left'] = 2
+                    # Zelle an der rechten Grenze
+                    if excel_col == 6:
+                        fmt_dict['right'] = 2
 
-        # Datenzellen formatieren
-        avg_table_start_row = column_header_row_avg + 2
-        avg_table_end_row = avg_table_start_row + len(avg_df)
-        for row_num in range(avg_table_start_row, avg_table_end_row):
-            worksheet.set_row(row_num, None, cell_format)
+                # Rahmen für Fallende Flanke
+                if 7 <= excel_col <= 11:
+                    # Zelle an der oberen Grenze
+                    if excel_row == avg_table_start_row:
+                        fmt_dict['top'] = 2
+                    # Zelle an der unteren Grenze
+                    if excel_row == avg_table_start_row + num_rows_avg - 1:
+                        fmt_dict['bottom'] = 2
+                    # Zelle an der linken Grenze
+                    if excel_col == 7:
+                        fmt_dict['left'] = 2
+                    # Zelle an der rechten Grenze
+                    if excel_col == 11:
+                        fmt_dict['right'] = 2
+
+                # Format erstellen
+                fmt = workbook.add_format(fmt_dict)
+
+                # Zelle schreiben
+                worksheet.write(excel_row, excel_col, cell_value, fmt)
 
         # Nun integrieren wir die Funktionalität von TK_auswahl_zu_excel()
 
@@ -232,6 +308,10 @@ def print_tk_data():
 
         for sheet_name_plot, plot_data in datasets:
             status, boards_data = plot_data
+
+            # Neues Blatt erstellen
+            worksheet = workbook.add_worksheet(sheet_name_plot)
+            writer.sheets[sheet_name_plot] = worksheet
 
             # Ermitteln der maximalen Anzahl von Messpunkten
             max_messpunkte = max(len(data[1]) for data in boards_data.values())
@@ -408,4 +488,3 @@ def print_tk_data():
 
         # Erfolgsmeldung
         print(f"Excel-Datei wurde gespeichert unter: {file_path}")
-
