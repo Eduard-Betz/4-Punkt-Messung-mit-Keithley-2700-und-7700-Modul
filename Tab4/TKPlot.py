@@ -242,12 +242,12 @@ def fit_and_store_line_data_generic(plot_frame, steigung_auswahl, sinkend_auswah
             # Debugging-Ausgaben
             if debugging_TKPlot:
                 
-                print(f"\nDebugging-Informationen für Linearregression:")
-                print(f"  Anzahl der Datenpunkte (n): {n}")
-                print(f"  Sxx: {Sxx}")
-                print(f"  delta_T: {delta_T}")
-                print(f"  delta_alpha: {delta_alpha}")
-                print(f"  delta_alpha_total: {delta_alpha_total}")
+                debug_print(f"\nDebugging-Informationen für Linearregression:")
+                debug_print(f"  Anzahl der Datenpunkte (n): {n}")
+                debug_print(f"  Sxx: {Sxx}")
+                debug_print(f"  delta_T: {delta_T}")
+                debug_print(f"  delta_alpha: {delta_alpha}")
+                debug_print(f"  delta_alpha_total: {delta_alpha_total}")
 
             # Rückgabe der berechneten Werte
             return (round(m, 5),
