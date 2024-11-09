@@ -1,0 +1,14 @@
+unter Linux
+        
+        start.sh muss unter cd den richtigen pfad bekommen  und mit
+
+            chmod +x /hier/der/richtige/pfrad/start.sh
+        
+        Aktibieren
+        
+        dann 4-Punkt-Messung.desktrop so konfigurieren das unter 
+            
+            Exec=/home/eloki/Dropbox/python/0. Messprogramm Final/start.sh
+            Icon=/home/eloki/Dropbox/python/0. Messprogramm Final/4-Punkt-Messung.png
+        
+        die richtigen Pfrade hinterlegt sind. 
