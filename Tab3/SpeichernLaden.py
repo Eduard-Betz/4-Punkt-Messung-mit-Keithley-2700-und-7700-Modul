@@ -1,6 +1,7 @@
 #PeichernLaden.yp
 
 import csv
+import os
 from datetime import datetime
 from tkinter import filedialog, Tk
 
@@ -20,8 +21,14 @@ def debug_print(message):
 
 def create_csv_file():
     timestamp = datetime.now().strftime("%d_%m_%y__%H_%M")
-    file_name = f"Messung_{timestamp}.csv"
     
+    # Stellen Sie sicher, dass das Verzeichnis 'Messdaten' existiert
+    directory = "Messdaten"
+    if not os.path.exists(directory):
+        os.makedirs(directory)
+    
+    # Erstellen Sie den Dateipfad innerhalb des 'Messdaten'-Ordners
+    file_name = os.path.join(directory, f"Messung_{timestamp}.csv")
     # Werte aus gefundenen_geraete hinzufügen
     geraete_data = [
         ["Baudrate", gefundenen_geraete.variables['baudrate']],

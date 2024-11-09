@@ -6,9 +6,9 @@ unter Linux
         
         Aktibieren
         
-        dann 4-Punkt-Messung.desktrop so konfigurieren das unter 
+        4-Punkt-Messung.desktrop so konfigurieren das unter 
             
-            Exec=/home/eloki/Dropbox/python/0. Messprogramm Final/start.sh
-            Icon=/home/eloki/Dropbox/python/0. Messprogramm Final/4-Punkt-Messung.png
+            Exec=/home/eloki/Dropbox/python/0.-Messprogramm-Final/start.sh
+            Icon=/home/eloki/Dropbox/python/0.-Messprogramm-Final/4-Punkt-Messung.png
         
         die richtigen Pfrade hinterlegt sind. 

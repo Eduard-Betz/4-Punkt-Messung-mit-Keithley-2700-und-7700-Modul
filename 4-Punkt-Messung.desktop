@@ -3,5 +3,5 @@ Type=Application
 Name=4-Punkt-Messung
 Exec=/home/eloki/Dropbox/python/0.-Messprogramm-Final/start.sh
 Icon=/home/eloki/Dropbox/python/0.-Messprogramm-Final/4-Punkt-Messung.png
-Terminal=true
+Terminal=false
 Categories=Utility;
