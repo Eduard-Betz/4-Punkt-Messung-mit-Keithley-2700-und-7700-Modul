@@ -14,7 +14,15 @@ class MainApp(tk.Tk):
     def __init__(self, finder_callback):
         super().__init__()
         self.title("Main GUI")
-        self.geometry("1600x900")
+        
+        #self.geometry("1600x900")
+
+        # Bildschirmauflösung abrufen
+        screen_width = self.winfo_screenwidth()
+        screen_height = self.winfo_screenheight()
+
+        # Fenstergröße auf Bildschirmgröße setzen
+        self.geometry(f"{screen_width}x{screen_height}")
 
         self.finder_callback = finder_callback
         self.stop_event = threading.Event()  # Initialisiere stop_event
