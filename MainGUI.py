@@ -15,6 +15,7 @@ class MainApp(tk.Tk):
         super().__init__()
         self.title("Main GUI")
         
+        #Alter code für die bilscheimauflösung
         #self.geometry("1600x900")
 
         # Bildschirmauflösung abrufen
