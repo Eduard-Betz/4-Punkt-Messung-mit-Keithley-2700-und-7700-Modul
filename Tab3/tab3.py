@@ -17,7 +17,7 @@ stop_event = threading.Event()
 measurement_thread = None  # Globale Variable für den Messungs-Thread
 
 def update_and_print_globals(delay_var, time_var):
-    global Zeitverzögertemessung, Zeitverzögerungswert
+    
     Zeitverzögertemessung = delay_var.get()
     Zeitverzögerungswert = time_var.get()
     print(f"Checkbox geändert: Zeitverzögertemessung = {Zeitverzögertemessung}")
