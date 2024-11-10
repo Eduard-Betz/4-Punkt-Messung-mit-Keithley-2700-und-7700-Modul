@@ -90,8 +90,7 @@ def create_tab4(notebook):
         # Dieser Button öffnet zuerst die Auswahl, löscht Plots, setzt Daten zurück und erstellt dann neue Plots
         ("Plot erstellen", 0, open_and_plot),
         ("TK Berechnen", 0.1, TKBerechnen),
-        ("TK zu Exel Tabelle", 0.8, print_tk_data),
-        ("Knopf 4", 0.9, None)
+        ("TK zu Exel Tabelle", 0.9, print_tk_data)
     ]
 
     buttons = create_buttons(tab4, button_positions)

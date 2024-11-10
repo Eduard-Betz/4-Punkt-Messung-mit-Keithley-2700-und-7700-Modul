@@ -99,7 +99,10 @@ def create_tab1(notebook, finder_callback):
     widerstaende_var.trace_add("write", lambda *args: variable_changed('widerstaende_var', *args))
 
     # Füge die Buttons am rechten Rand hinzu
-    button_positions = [("Suchen", 0, finder_callback), ("Prüfen", 0.1, lambda: print_geräte_check(baudrate_var, anzahl_var, boards_var, widerstaende_var, True)), ("Weiter", 0.9, lambda: handle_knopf3_click(notebook))]
+    button_positions = [("Suchen", 0, finder_callback), 
+                        ("Prüfen", 0.1, lambda: print_geräte_check(baudrate_var, anzahl_var, boards_var, widerstaende_var, True)),
+                        ("Weiter", 0.9, lambda: handle_knopf3_click(notebook))
+                        ]
     buttons = create_buttons(tab1, button_positions)
 
     # Knopf 2 deaktivieren, wenn anzahl_var leer oder null ist
