@@ -12,3 +12,7 @@ unter Linux
             Icon=/home/eloki/Dropbox/python/0.-Messprogramm-Final/4-Punkt-Messung.png
         
         die richtigen Pfrade hinterlegt sind. 
+
+
+- Einbau einer Ofensteuerung. wenn eine Ofensteuerung eingebaut werden soll sollte sie in der datei Messungen.py im unterodner Tab3 eingebaut werden. 
+- dafür sollte die funktion start_measurement angefast werden und so angepasst werden das sie nicht nur auf denkopf stop als stopsignal reagiert. 

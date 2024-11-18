@@ -14,7 +14,9 @@ debugging_messungen = False
 def debug_print_messungen(message):
     if debugging_messungen:
         print(message)
-        
+
+
+# eine Ofensteuerung kann an dieser stelle eingabeut werden in dem Start_measurement so anpasst das sie nicht nur beim Drücken auf die stop taste reagiert sondern auch auf das signal der ofensteuerung. 
 
 def start_measurement(stop_event, Zeitverzögertemessung, Zeitverzögerungswert):
     debug_print_messungen("Messung wird gestartet...")

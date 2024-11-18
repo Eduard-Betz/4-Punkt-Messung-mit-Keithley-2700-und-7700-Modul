@@ -14,7 +14,7 @@ class MainApp(tk.Tk):
     def __init__(self, finder_callback):
         super().__init__()
         self.title("Main GUI")
-        
+
         #Alter code für die bilscheimauflösung
         #self.geometry("1600x900")
 
